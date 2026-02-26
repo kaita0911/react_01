@@ -1,0 +1,78 @@
+@use "sass:map";
+// grid
+$grid-gutter-width: 15px !default;
+$container-width: 1240px !default;
+
+$displays: none, block, flex !default;
+
+$grid-breakpoints: (
+  xs: 0,
+  sm: 576px,
+  md: 768px,
+  lg: 992px,
+  xl: 1400px) !default;
+
+// Spacing
+$spacer: 1rem !default;
+$spacers: (
+  ) !default;
+$spacers: map.merge((0: 0,
+      5: ($spacer * 0.5),
+      10: ($spacer * 1),
+      20: ($spacer * 2)),
+    $spacers
+);
+
+//font
+$font-primary: "Roboto", sans-serif;
+
+//$font-secondary: "Noto Sans JP", sans-serif;
+//$font-en: $font-secondary;
+
+$font-weight-bold: 700;
+$font-weight-medium: 500;
+$font-weight-regular: 400;
+$font-weight-light: 300;
+
+$font-size-reset: 10px !default;
+$font-family-base: $font-primary;
+$font-size-base: 14px !default;
+$line-height-base: 1.5;
+$font-weight-base: $font-weight-regular;
+
+//color
+$black: #000;
+$white: #fff;
+$gray-100: #1E1E1E;
+$gray-300: #e6e6e6;
+
+$body-color: $gray-100;
+$body-bg: $white !default;
+$border-color: $gray-300 !default;
+
+$primary: #b31d29;
+$hover: #be1e2d;
+
+// Button
+$btn-disabled-opacity: 0.6;
+$btn-border-width: 1px !default;
+$btn-font-weight: $font-weight-regular;
+$btn-font-family: $font-family-base;
+
+// Table
+$table-th-font-weight: $font-weight-base;
+
+// Form
+$input-height: 50px !default;
+$input-padding-y: 5px !default;
+$input-padding-x: 10px !default;
+$input-font-family: $font-family-base;
+$input-bg: $white;
+$input-border-width: 1px;
+$input-border-color: $border-color;
+$input-color: $black;
+$input-disabled-bg: $gray-100;
+$input-placeholder-color: $gray-300;
+$input-font-size: $font-size-base;
+$input-font-weight: $font-weight-base;
+$input-line-height: 1.5;

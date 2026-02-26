@@ -1,0 +1,6 @@
+User-agent: *
+Disallow:/admindir/
+Disallow:/loading/
+Disallow:/picture/
+Disallow:/gio-hang/
+Disallow:/*.php

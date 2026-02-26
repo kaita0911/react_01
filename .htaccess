@@ -1,0 +1,86 @@
+Options +FollowSymLinks
+RewriteEngine On
+RewriteBase /
+
+# =============================
+# THUMB IMAGE (BẮT BUỘC ĐẶT TRÊN CÙNG)
+# =============================
+
+# Không rewrite chính thumb.php
+RewriteCond %{REQUEST_URI} !thumb\.php$ [NC]
+
+# Có width & height
+RewriteCond %{QUERY_STRING} (^|&)width=[0-9]+(&|$) [NC]
+RewriteCond %{QUERY_STRING} (^|&)height=[0-9]+(&|$) [NC]
+
+# File ảnh tồn tại
+RewriteCond %{REQUEST_FILENAME} -f
+
+# JPG PNG GIF WEBP
+RewriteRule ^(.+)\.(jpe?g|png|gif|webp)$ thumb.php?src=$1.$2 [QSA,L]
+
+# =========================================
+# TRANG ADMIN
+# =========================================
+RewriteRule ^quantri?$ dirdoaibiet.php [L,QSA]
+
+# =========================================
+# BỎ QUA FILE HOẶC THƯ MỤC THẬT
+# =========================================
+#RewriteCond %{REQUEST_URI} !^/quantri/?$
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+#RewriteCond %{REQUEST_URI} !\.(php|html|css|js|jpg|png|gif|ico)$
+#RewriteRule ^(.+[^/])$ /$1/ [L,R=301]
+
+# =========================================
+# TRANG CHỦ
+# =========================================
+RewriteRule ^index\.html$ index.php [L,QSA]
+RewriteRule ^$ index.php [L,QSA]
+
+# =========================
+# TÌM KIẾM — đặt TRƯỚC các rule tiếng Việt
+# =========================
+RewriteRule ^tim-kiem/([^/]+)/page/([0-9]+)/?$ index.php?cat1=tim-kiem&keyword=$1&page=$2 [L,QSA]
+RewriteRule ^tim-kiem/([^/]+)/?$ index.php?cat1=tim-kiem&keyword=$1 [L,QSA]
+# =========================================
+# TIẾNG ANH: /en/...
+# =========================================
+# Ưu tiên có page + sort trước
+RewriteRule ^en/([a-zA-Z0-9\-]+)/page/([0-9]+)/sort/([a-zA-Z0-9\-_]+)/?$ index.php?lang=en&cat1=$1&page=$2&sort=$3 [L,QSA]
+RewriteRule ^en/([a-zA-Z0-9\-]+)/sort/([a-zA-Z0-9\-_]+)/?$ index.php?lang=en&cat1=$1&sort=$2 [L,QSA]
+RewriteRule ^en/([a-zA-Z0-9\-]+)/page/([0-9]+)/?$ index.php?lang=en&cat1=$1&page=$2 [L,QSA]
+# URL tag
+RewriteRule ^en/tag/([a-zA-Z0-9\-]+)/?$ index.php?lang=en&cat1=tag/$1 [L,QSA]
+
+# Chi tiết sản phẩm tiếng Anh
+RewriteRule ^en/([a-zA-Z0-9\-]+)\.html$ index.php?lang=en&unique_key=$1 [L,QSA]
+
+# Danh mục con tiếng Anh
+RewriteRule ^en/([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-]+)/?$ index.php?lang=en&cat1=$1&cat2=$2 [L,QSA]
+
+# Danh mục cha tiếng Anh
+RewriteRule ^en/([a-zA-Z0-9\-]+)/?$ index.php?lang=en&cat1=$1 [L,QSA]
+
+
+
+# =========================================
+# TIẾNG VIỆT: không có /vn/
+# =========================================
+#RewriteRule ^([a-zA-Z0-9\-]+)/page/([0-9]+)/sort/([a-zA-Z0-9\-_]+)/?$ index.php?cat1=$1&page=$2&sort=$3 [L,QSA]
+RewriteRule ^([a-zA-Z0-9\-]+)/sort/([a-zA-Z0-9\-_]+)/?$ index.php?cat1=$1&sort=$2 [L,QSA]
+#RewriteRule ^([a-zA-Z0-9\-]+)/page/([0-9]+)/?$ index.php?cat1=$1&page=$2 [L,QSA]
+
+# URL tag
+RewriteRule ^tag/([a-zA-Z0-9\-]+)/?$ index.php?cat1=tag/$1 [L,QSA]
+
+# Chi tiết sản phẩm tiếng Việt
+RewriteRule ^([a-zA-Z0-9\-]+)\.html$ index.php?unique_key=$1 [L,QSA]
+
+# Danh mục con tiếng Việt
+RewriteRule ^([a-zA-Z0-9\-]+)/([a-zA-Z0-9\-]+)/?$ index.php?cat1=$1&cat2=$2 [L,QSA]
+
+# Danh mục cha tiếng Việt
+RewriteRule ^([a-zA-Z0-9\-]+)/?$ index.php?cat1=$1 [L,QSA]
+

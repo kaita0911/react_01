@@ -1,0 +1,109 @@
+.animate_animated {
+	animation-duration: 1.5s;
+	animation-fill-mode: both;
+	animation-timing-function: ease;
+}
+
+.animate__imageScale {
+	animation-name: imageScale;
+}
+
+@keyframes imageScale {
+	0% {
+		-webkit-transform: scale(1.1);
+		transform: scale(1.1);
+	}
+
+	100% {
+		-webkit-transform: scale(1);
+		transform: scale(1);
+	}
+}
+
+@keyframes phoneRing {
+	0% {
+		transform: rotate(0deg);
+	}
+
+	10% {
+		transform: rotate(-20deg);
+	}
+
+	20% {
+		transform: rotate(20deg);
+	}
+
+	30% {
+		transform: rotate(-15deg);
+	}
+
+	40% {
+		transform: rotate(15deg);
+	}
+
+	50% {
+		transform: rotate(-10deg);
+	}
+
+	60% {
+		transform: rotate(10deg);
+	}
+
+	70% {
+		transform: rotate(-5deg);
+	}
+
+	80% {
+		transform: rotate(5deg);
+	}
+
+	100% {
+		transform: rotate(0deg);
+	}
+}
+
+@keyframes fadeInScale {
+	from {
+		transform: scale(0.8);
+		opacity: 0;
+	}
+
+	to {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+@keyframes fadeInUp {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes slideIn {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes light-run {
+	0% {
+		left: -100%;
+	}
+
+	100% {
+		left: 100%;
+	}
+}

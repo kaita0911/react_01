@@ -1,0 +1,209 @@
+@use "mixin";
+@use "variables";
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css');
+//@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+:root {
+	--font-family-base: #{variables.$font-family-base};
+	--font-weight-base: #{variables.$font-weight-base};
+	--lineheight-base: #{variables.$line-height-base};
+	--font-size-base: #{mixin.rem(16px)};
+	--color-primary: #45B2C2;
+	--color-warning: #f00;
+	--input-border-color: #{variables.$input-border-color};
+	--input-border-width: #{mixin.rem(variables.$input-border-width)};
+	--input-font-size: #{variables.$input-font-size};
+	--input-font-weight: #{variables.$input-font-weight};
+	--input-background: #{variables.$input-bg};
+
+	@include mixin.mq('md', min) {
+		--font-size-base: #{mixin.rem(16px)};
+	}
+}
+
+* {
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+
+// *:focus {
+// 	outline: none !important;
+// 	border: none !important;
+// }
+
+html {
+	font-size: #{mixin.rem(10px)};
+	font-size: calc(10 / 3.75)*1vw;
+	overflow-y: scroll !important;
+
+	@include mixin.mq('md', min) {
+		font-size: calc(10 / 16)*1vw;
+	}
+
+	&.noscroll {
+		position: fixed;
+		left: 0;
+		right: 0;
+		width: 100%;
+		overflow-y: scroll;
+		overflow-x: hidden;
+	}
+}
+
+body {
+	background-color: variables.$body-bg;
+	color: variables.$body-color;
+	margin: 0;
+	padding: 0;
+	font-family: var(--font-family-base);
+	font-weight: var(--font-weight-base);
+	font-size: 1.4rem;
+	line-height: 1.7;
+	text-align: left;
+	position: relative;
+
+	@include mixin.mq('md', min) {
+		font-size: var(--font-size-base);
+	}
+
+	&.menu-show {
+
+		.bg-overlay {
+			display: block;
+			z-index: 2;
+		}
+	}
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+	margin: 0;
+}
+
+ol,
+ul,
+dl {
+	list-style-type: none;
+	margin: 0;
+	padding-left: 0;
+}
+
+b,
+strong {
+	font-weight: variables.$font-weight-bold;
+}
+
+a {
+	background-color: transparent; // Remove the gray background on active links in IE 10.
+	color: inherit;
+	text-decoration: none;
+}
+
+img {
+	vertical-align: middle;
+	border-style: none; // Remove the border on images inside links in IE 10-.
+	max-width: 100%;
+	height: auto;
+}
+
+table {
+	border-collapse: collapse; // Prevent double borders
+}
+
+th {
+	font-weight: variables.$table-th-font-weight;
+	text-align: inherit;
+	text-align: -webkit-match-parent;
+}
+
+input,
+button,
+select,
+optgroup,
+textarea {
+	margin: 0; // Remove the margin in Firefox and Safari
+	font-family: inherit;
+	font-size: inherit;
+	line-height: inherit;
+}
+
+button,
+input {
+	overflow: visible; // Show the overflow in Edge
+}
+
+button,
+select {
+	text-transform: none; // Remove the inheritance of text transform in Firefox
+}
+
+select {
+	word-wrap: normal;
+}
+
+button,
+[type="button"],
+[type="reset"],
+[type="submit"] {
+	-webkit-appearance: button;
+}
+
+textarea {
+	overflow: auto; // Remove the default vertical scrollbar in IE.
+	// Textareas should really only resize vertically so they don't break their (horizontal) containers.
+	resize: vertical;
+}
+
+[type="number"]::-webkit-inner-spin-button,
+[type="number"]::-webkit-outer-spin-button {
+	height: auto;
+}
+
+[type="search"] {
+	outline-offset: -2px; // 2. Correct the outline style in Safari.
+	-webkit-appearance: none;
+}
+
+[type="search"]::-webkit-search-decoration {
+	-webkit-appearance: none;
+}
+
+[hidden] {
+	display: none !important;
+}
+
+.aligncenter {
+	text-align: center;
+}
+
+.alignright {
+	text-align: right;
+}
+
+.alignleft {
+	text-align: left;
+}
+
+img {
+	&.aligncenter {
+		display: block;
+		margin: auto;
+	}
+
+	&.alignright {
+		display: block;
+		margin-left: auto;
+	}
+
+	&.alignleft {
+		display: block;
+		margin-right: auto;
+	}
+}

@@ -1,0 +1,186 @@
+@use "variables" as v;
+
+@use "sass:list";
+@use "sass:map";
+@use "sass:math";
+
+// =============================
+// SIZE FUNCTIONS
+// =============================
+
+@function rem($size) {
+    $remSize: math.div($size, v.$font-size-reset);
+    @return $remSize * 1rem;
+}
+
+@function fs($size) {
+    $remSize: math.div($size, v.$font-size-reset);
+    @return clamp(10px, $remSize * 1rem, $remSize * 1rem);
+}
+
+// =============================
+// BREAKPOINT FUNCTIONS
+// =============================
+
+@function breakpoint-next($name,
+    $breakpoints: v.$grid-breakpoints,
+    $breakpoint-names: map.keys($breakpoints)) {
+    $n: list.index($breakpoint-names, $name);
+
+    @return if($n !=null and $n < list.length($breakpoint-names),
+        list.nth($breakpoint-names, $n + 1),
+        null);
+}
+
+@function breakpoint-min($name, $breakpoints: v.$grid-breakpoints) {
+    $min: map.get($breakpoints, $name);
+    @return if($min !=0, $min, null);
+}
+
+@function breakpoint-max($name, $breakpoints: v.$grid-breakpoints) {
+    $max: map.get($breakpoints, $name);
+    @return if($max !=0, $max - 1, null);
+}
+
+@function breakpoint-infix($name, $breakpoints: v.$grid-breakpoints) {
+    @return if(breakpoint-min($name, $breakpoints)==null, "", "-#{$name}");
+}
+
+// =============================
+// MIXINS
+// =============================
+
+@mixin font-size($fs) {
+    font-size: math.div($fs, v.$font-size-reset) * 1rem;
+}
+
+@mixin css-triangle($color, $direction, $size: 6px, $size-arrow: 6px) {
+    width: 0;
+    height: 0;
+
+    @if $direction ==down {
+        border-left: $size solid transparent;
+        border-right: $size solid transparent;
+        border-top: $size-arrow solid $color;
+    }
+
+    @else if $direction ==up {
+        border-left: $size solid transparent;
+        border-right: $size solid transparent;
+        border-bottom: $size-arrow solid $color;
+    }
+
+    @else if $direction ==right {
+        border-top: $size solid transparent;
+        border-bottom: $size solid transparent;
+        border-left: $size-arrow solid $color;
+    }
+
+    @else if $direction ==left {
+        border-top: $size solid transparent;
+        border-bottom: $size solid transparent;
+        border-right: $size-arrow solid $color;
+    }
+}
+
+@mixin input-placeholder {
+
+    &.placeholder,
+    &:-moz-placeholder,
+    &::-moz-placeholder,
+    &:-ms-input-placeholder,
+    &::-webkit-input-placeholder {
+        @content;
+    }
+}
+
+// =============================
+// MEDIA QUERY MIXIN
+// =============================
+
+@mixin mq($name, $type: max, $breakpoints: v.$grid-breakpoints) {
+    @if map.has-key($breakpoints, $name) {
+        @if $type ==max {
+            $max: breakpoint-max($name, $breakpoints);
+
+            @if $max {
+                @media (max-width: $max) {
+                    @content;
+                }
+            }
+
+            @else {
+                @content;
+            }
+        }
+
+        @else {
+            $min: breakpoint-min($name, $breakpoints);
+
+            @if $min {
+                @media (min-width: $min) {
+                    @content;
+                }
+            }
+
+            @else {
+                @content;
+            }
+        }
+    }
+}
+
+// =============================
+// TYPOGRAPHY
+// =============================
+
+@mixin leadingTrim($lh) {
+
+    &::before,
+    &::after {
+        content: "";
+        display: block;
+        inline-size: 0;
+        block-size: 1px;
+    }
+
+    &::before {
+        margin-block-end: calc((1 - #{$lh}) * 0.5em);
+    }
+
+    &::after {
+        margin-block-start: calc((1 - #{$lh}) * 0.5em);
+    }
+}
+
+// =============================
+// ANIMATION
+// =============================
+
+@mixin keyframes($animation-name) {
+    @-webkit-keyframes #{$animation-name} {
+        @content;
+    }
+
+    @keyframes #{$animation-name} {
+        @content;
+    }
+}
+
+// =============================
+// HOVER HELPERS
+// =============================
+
+@mixin hover {
+    &:hover {
+        @content;
+    }
+}
+
+@mixin hover-focus {
+
+    &:hover,
+    &:focus {
+        @content;
+    }
+}

@@ -1,0 +1,22 @@
+@use "../common/mixin";
+@use "../common/variables";
+
+@use "sass:map";
+.text-justify  { text-align: justify !important; }
+.text-wrap     { white-space: normal !important; }
+.text-nowrap   { white-space: nowrap !important; }
+
+@each $breakpoint in map.keys(variables.$grid-breakpoints) {
+    @include mixin.mq($breakpoint, min) {
+        $infix: mixin.breakpoint-infix($breakpoint, variables.$grid-breakpoints);
+    
+        .text#{$infix}-left   { text-align: left !important; }
+        .text#{$infix}-right  { text-align: right !important; }
+        .text#{$infix}-center { text-align: center !important; }
+    }
+}
+
+.text-lowercase  { text-transform: lowercase !important; }
+.text-uppercase  { text-transform: uppercase !important; }
+.text-capitalize { text-transform: capitalize !important; }
+.text-underline  { text-decoration: underline; }

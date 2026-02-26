@@ -1,0 +1,62 @@
+@use 'common/variables' as *;
+@use 'common/mixin' as *;
+
+.f-services {
+    margin-top: 2rem;
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1rem;
+
+    @include mq('md', min) {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 3rem;
+    }
+
+    &__item {
+        position: relative;
+        overflow: hidden;
+        height: 25rem;
+
+        &__ttl {
+            position: absolute;
+            bottom: 0;
+            text-align: center;
+            background: #00000070;
+            width: 100%;
+            padding: 1rem;
+            color: #FFF;
+            font-weight: 400;
+            transition: all 0.3s;
+        }
+
+        img {
+            transition: all 0.3s;
+
+        }
+
+        &:hover {
+            .f-services__item__ttl {
+                background: $primary;
+            }
+
+            img {
+                transform: scale(1.15);
+            }
+        }
+    }
+}
+
+.view-set-detail {
+    display: inline-flex;
+    background: $primary;
+    margin: 1rem 0;
+    border-radius: 6rem;
+    padding: 1rem 3rem;
+    font-weight: 500;
+    transition: all 0.3s;
+    cursor: pointer;
+
+    &:hover {
+        background: $hover;
+    }
+}

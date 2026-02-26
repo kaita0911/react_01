@@ -1,0 +1,214 @@
+/* ================================
+   USE
+================================ */
+@use "mixin" as *;
+@use "variables" as *;
+
+/* External CSS */
+@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css");
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@100..900&display=swap");
+
+
+/* ================================
+   ROOT VARIABLES
+================================ */
+:root {
+	--font-family-base: #{$font-family-base};
+	--font-weight-base: #{$font-weight-base};
+	--lineheight-base: #{$line-height-base};
+
+	--font-size-base: #{rem(16px)};
+	--color-primary: #45B2C2;
+	--color-warning: #f00;
+
+	--input-border-color: #{$input-border-color};
+	--input-border-width: #{rem($input-border-width)};
+	--input-font-size: #{$input-font-size};
+	--input-font-weight: #{$input-font-weight};
+	--input-background: #{$input-bg};
+
+	@include mq("md", min) {
+		--font-size-base: #{rem(16px)};
+	}
+}
+
+
+/* ================================
+   RESET
+================================ */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+
+/* ================================
+   HTML
+================================ */
+html {
+	font-size: #{rem(10px)};
+	font-size: calc(10 / 3.75 * 1vw);
+	overflow-y: scroll !important;
+
+	@include mq("md", min) {
+		font-size: calc(10 / 16 * 1vw);
+	}
+
+	&.noscroll {
+		position: fixed;
+		inset: 0;
+		width: 100%;
+		overflow-y: scroll;
+		overflow-x: hidden;
+	}
+}
+
+
+/* ================================
+   BODY
+================================ */
+body {
+	background-color: $body-bg;
+	color: $body-color;
+	margin: 0;
+	padding: 0;
+
+	font-family: var(--font-family-base);
+	font-weight: var(--font-weight-base);
+	font-size: 1.4rem;
+	line-height: 1.7;
+	position: relative;
+
+	@include mq("md", min) {
+		font-size: var(--font-size-base);
+	}
+
+	&.menu-show .bg-overlay {
+		display: block;
+		z-index: 2;
+	}
+}
+
+
+/* ================================
+   TYPOGRAPHY
+================================ */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+	margin: 0;
+}
+
+b,
+strong {
+	font-weight: $font-weight-bold;
+}
+
+
+/* ================================
+   LIST
+================================ */
+ol,
+ul,
+dl {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+
+/* ================================
+   LINKS & MEDIA
+================================ */
+a {
+	background-color: transparent;
+	color: inherit;
+	text-decoration: none;
+}
+
+img {
+	vertical-align: middle;
+	border-style: none;
+	max-width: 100%;
+	height: auto;
+}
+
+
+/* ================================
+   TABLE
+================================ */
+table {
+	border-collapse: collapse;
+}
+
+th {
+	font-weight: $table-th-font-weight;
+	text-align: left;
+}
+
+
+/* ================================
+   FORM
+================================ */
+input,
+button,
+select,
+textarea {
+	margin: 0;
+	font: inherit;
+}
+
+button,
+input {
+	overflow: visible;
+}
+
+button,
+select {
+	text-transform: none;
+}
+
+textarea {
+	overflow: auto;
+	resize: vertical;
+}
+
+
+/* ================================
+   UTILITIES
+================================ */
+[hidden] {
+	display: none !important;
+}
+
+.aligncenter {
+	text-align: center;
+}
+
+.alignright {
+	text-align: right;
+}
+
+.alignleft {
+	text-align: left;
+}
+
+img.aligncenter {
+	display: block;
+	margin: auto;
+}
+
+img.alignright {
+	display: block;
+	margin-left: auto;
+}
+
+img.alignleft {
+	display: block;
+	margin-right: auto;
+}

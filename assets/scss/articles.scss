@@ -1,0 +1,115 @@
+@use 'common/variables' as *;
+@use 'common/mixin' as *;
+
+.f-articles {
+    display: grid;
+    margin-top: 3rem;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 2rem;
+
+    @include mq('md', min) {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 3rem;
+    }
+
+    .articles {
+        &__img {
+            display: block;
+            overflow: hidden;
+            height: 22rem;
+            margin-bottom: 1rem;
+
+            @include mq('md', min) {
+                height: 30rem;
+            }
+        }
+
+        &__ttl {
+            display: block;
+            font-size: 1.7rem;
+
+
+            @include mq('md', min) {
+                font-size: 1.7rem;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                /* số dòng muốn giới hạn */
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+
+            &:hover {
+                color: $hover;
+            }
+        }
+
+        &__des {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            /* số dòng muốn giới hạn */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        &__date {
+            font-size: 1.2rem;
+            margin: 0.5rem 0;
+            color: #999;
+
+            @include mq('md', min) {
+                font-size: 1.4rem;
+            }
+        }
+    }
+
+}
+
+.related-articles {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+
+    .ttl02 {
+        margin-bottom: 1rem;
+    }
+
+    &__lst {
+        display: grid;
+        grid-template-columns: repeat(1, 1fr);
+        gap: 1.5rem;
+
+        @include mq('md', min) {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 3rem;
+        }
+
+        .related-item {
+            gap: 1rem;
+            display: flex;
+
+            @include mq('md', min) {
+                gap: 2rem;
+            }
+
+            &__img {
+                width: 20%;
+                flex-shrink: 0;
+                height: 6rem;
+                object-fit: cover;
+
+                @include mq('md', min) {
+                    width: 30%;
+                    height: 10rem;
+                }
+            }
+
+            &__ttl {
+                flex: 1;
+                font-size: 1.5rem;
+
+                @include mq('md', min) {
+                    font-size: 1.6rem;
+                }
+            }
+        }
+    }
+}

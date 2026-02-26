@@ -1,0 +1,15 @@
+@use "variables" as v;
+@use "mixin" as m;
+
+.container {
+  margin: auto;
+  max-width: m.rem(v.$container-width + v.$grid-gutter-width * 2);
+  padding-left: 1rem;
+  padding-right: 1rem;
+  width: 100%;
+
+  @include m.mq(md, min) {
+    padding-left: m.rem(v.$grid-gutter-width);
+    padding-right: m.rem(v.$grid-gutter-width);
+  }
+}

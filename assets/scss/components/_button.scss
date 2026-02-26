@@ -1,0 +1,30 @@
+@use "../common/mixin";
+@use "../common/variables";
+
+.btn {
+    display: inline-block;
+    font-family: variables.$btn-font-family;
+    font-weight: variables.$btn-font-weight;
+    color: variables.$body-color;
+    text-align: center;
+    text-decoration: none;
+    vertical-align: middle;
+    user-select: none;
+    background-color: transparent;
+    border: variables.$btn-border-width solid transparent;
+  
+    &:focus,
+    &.focus {
+        outline: 0;
+    }
+  
+    // Disabled comes first so active can properly restyle
+    &.disabled,
+    &:disabled {
+        opacity: variables.$btn-disabled-opacity;
+    }
+  
+    &:not(:disabled):not(.disabled) {
+        cursor: pointer;
+    }
+}

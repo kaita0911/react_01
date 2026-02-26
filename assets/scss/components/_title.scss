@@ -1,0 +1,49 @@
+@use "../common/mixin" as *;
+@use "../common/variables" as *;
+
+.ttl01 {
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.ttl02 {
+    // text-align: center;
+    // text-transform: uppercase;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    // margin-bottom: 3rem;
+    // padding-bottom: 1rem;
+    font-size: 1.8rem;
+    font-weight: 600;
+
+    @include mq('md', min) {
+        font-size: 2.2rem;
+    }
+
+    &.--sale {
+        color: $primary;
+    }
+
+    // &:after {
+    //     position: absolute;
+    //     content: "";
+    //     left: 0;
+    //     right: 0;
+    //     margin: auto;
+    //     width: 4rem;
+    //     height: 2px;
+    //     background: $primary;
+    //     bottom: 0;
+    // }
+}
+
+.title-page {
+    h1 {
+        @include mq('md') {
+            font-size: 2rem;
+        }
+    }
+}

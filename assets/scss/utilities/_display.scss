@@ -1,0 +1,14 @@
+@use "../common/mixin";
+@use "../common/variables";
+
+@use "sass:map";
+@each $breakpoint in map.keys(variables.$grid-breakpoints) {
+    @include mixin.mq($breakpoint, min) {
+        $infix: mixin.breakpoint-infix($breakpoint, variables.$grid-breakpoints);
+    
+        @each $value in variables.$displays {
+            .d#{$infix}-#{$value} { display: $value !important; }
+        }
+    }
+}
+  

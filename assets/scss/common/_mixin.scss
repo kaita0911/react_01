@@ -1,0 +1,196 @@
+@use "variables";
+
+@use "sass:list";
+@use "sass:map";
+@use "sass:math";
+
+@function rem($size) {
+    $remSize: math.div($size, variables.$font-size-reset);
+    @return $remSize * 1rem;
+}
+
+@function fs($size) {
+    $remSize: math.div($size, variables.$font-size-reset);
+    @return clamp(10px, $remSize * 1rem, $remSize * 1rem);
+}
+
+@function breakpoint-next($name, $breakpoints: variables.$grid-breakpoints, $breakpoint-names: map.keys($breakpoints)) {
+    $n: list.index($breakpoint-names, $name);
+
+    @if $n !=null and $n < list.length($breakpoint-names) {
+        @return list.nth($breakpoint-names, $n + 1);
+    }
+
+    @else {
+        @return null;
+    }
+}
+
+@function breakpoint-min($name, $breakpoints: variables.$grid-breakpoints) {
+    $min: map.get($breakpoints, $name);
+
+    @if $min !=0 {
+        @return $min;
+    }
+
+    @else {
+        @return null;
+    }
+}
+
+@function breakpoint-max($name, $breakpoints: variables.$grid-breakpoints) {
+    $max: map.get($breakpoints, $name);
+
+    @if $max !=0 {
+        @return $max - 1;
+    }
+
+    @else {
+        @return null;
+    }
+}
+
+@function breakpoint-infix($name, $breakpoints: variables.$grid-breakpoints) {
+    @if breakpoint-min($name, $breakpoints)==null {
+        @return "";
+    }
+
+    @else {
+        @return "-#{$name}";
+    }
+}
+
+@mixin font-size($fs) {
+    font-size: math.div($fs, variables.$font-size-reset) * 1rem;
+}
+
+@mixin css-triangle($color, $direction, $size: 6px, $size-arrow: 6px) {
+    width: 0;
+    height: 0;
+
+    @if $direction ==down {
+        border-left: $size solid transparent;
+        border-right: $size solid transparent;
+        border-top: $size-arrow solid $color;
+    }
+
+    @else if $direction ==up {
+        border-left: $size solid transparent;
+        border-right: $size solid transparent;
+        border-bottom: $size-arrow solid $color;
+    }
+
+    @else if $direction ==right {
+        border-top: $size solid transparent;
+        border-bottom: $size solid transparent;
+        border-left: $size-arrow solid $color;
+    }
+
+    @else if $direction ==left {
+        border-top: $size solid transparent;
+        border-bottom: $size solid transparent;
+        border-right: $size-arrow solid $color;
+    }
+}
+
+@mixin input-placeholder {
+    &.placeholder {
+        @content;
+    }
+
+    &:-moz-placeholder {
+        @content;
+    }
+
+    &::-moz-placeholder {
+        @content;
+    }
+
+    &:-ms-input-placeholder {
+        @content;
+    }
+
+    &::-webkit-input-placeholder {
+        @content;
+    }
+}
+
+@mixin mq($name, $type: max, $breakpoints: variables.$grid-breakpoints) {
+    @if map.has-key($breakpoints, $name) {
+        $width: map.get($breakpoints, $name);
+
+        @if $type ==max {
+            $width: $width - 1px;
+
+            $max: breakpoint-max($name, $breakpoints);
+
+            @if $max {
+                @media (max-width: $max) {
+                    @content;
+                }
+            }
+
+            @else {
+                @content;
+            }
+        }
+
+        @else {
+            $min: breakpoint-min($name, $breakpoints);
+
+            @if $min {
+                @media (min-width: $min) {
+                    @content;
+                }
+            }
+
+            @else {
+                @content;
+            }
+        }
+    }
+}
+
+@mixin leadingTrim($lh) {
+
+    &::before,
+    &::after {
+        content: '';
+        display: block flow;
+        inline-size: 0;
+        block-size: 1px; // marginが貫通しないようにする
+    }
+
+    // 前の要素との相殺を防ぐために::beforeに`margin-block-end`、::afterに`margin-block-start`を指定する
+    &::before {
+        margin-block-end: calc((1 - #{$lh}) * 0.5em);
+    }
+
+    &::after {
+        margin-block-start: calc((1 - #{$lh}) * 0.5em);
+    }
+}
+
+@mixin keyframes($animation-name) {
+    @-webkit-keyframes #{$animation-name} {
+        @content;
+    }
+
+    @keyframes #{$animation-name} {
+        @content;
+    }
+}
+
+@mixin hover() {
+    &:hover {
+        @content;
+    }
+}
+
+@mixin hover-focus() {
+
+    &:hover,
+    &:focus {
+        @content;
+    }
+}
