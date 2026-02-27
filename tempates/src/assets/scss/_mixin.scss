@@ -27,23 +27,48 @@
     $breakpoint-names: map.keys($breakpoints)) {
     $n: list.index($breakpoint-names, $name);
 
-    @return if($n !=null and $n < list.length($breakpoint-names),
-        list.nth($breakpoint-names, $n + 1),
-        null);
+    @if $n !=null and $n < list.length($breakpoint-names) {
+        @return list.nth($breakpoint-names, $n + 1);
+    }
+
+    @else {
+        @return null;
+    }
+
 }
 
 @function breakpoint-min($name, $breakpoints: v.$grid-breakpoints) {
     $min: map.get($breakpoints, $name);
-    @return if($min !=0, $min, null);
+
+    @if $min !=0 {
+        @return $min;
+    }
+
+    @else {
+        @return null;
+    }
 }
 
 @function breakpoint-max($name, $breakpoints: v.$grid-breakpoints) {
     $max: map.get($breakpoints, $name);
-    @return if($max !=0, $max - 1, null);
+
+    @if $max !=0 {
+        @return $max - 1;
+    }
+
+    @else {
+        @return null;
+    }
 }
 
 @function breakpoint-infix($name, $breakpoints: v.$grid-breakpoints) {
-    @return if(breakpoint-min($name, $breakpoints)==null, "", "-#{$name}");
+    @if breakpoint-min($name, $breakpoints)==null {
+        @return "";
+    }
+
+    @else {
+        @return "-#{$name}";
+    }
 }
 
 // =============================
