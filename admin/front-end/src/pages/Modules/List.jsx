@@ -341,7 +341,7 @@ export default function General() {
 
                 <div className="modal-actions">
                   <button className="btn-confirm" onClick={confirmDelete}>
-                    Xoá
+                    <i className="fa-solid fa-trash"></i> Xoá
                   </button>
                   <button className="btn-cancel" onClick={closeModal}>
                     Huỷ

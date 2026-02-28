@@ -481,6 +481,10 @@
 }
 
 /* ====== Table ====== */
+
+
+
+
 .admin-table {
     width: 100%;
     border-collapse: separate;
@@ -556,6 +560,15 @@
             justify-content: center;
             gap: 10px;
 
+            .btn-view {
+                background: #17a2b8;
+                color: #fff;
+            }
+
+            .btn-view:hover {
+                background: #138496;
+            }
+
             .btn-delete {
                 cursor: pointer;
                 background: #ffe6e6;
@@ -581,6 +594,20 @@
                     opacity: 0.7;
                 }
             }
+
+            .drag-handle {
+                cursor: grab;
+                font-size: 12px;
+                user-select: none;
+                background: #007bff3b;
+                color: #5e5eed;
+
+                &:active {
+                    cursor: grabbing;
+                }
+            }
+
+
         }
     }
 

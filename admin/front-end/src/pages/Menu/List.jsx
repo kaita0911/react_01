@@ -1,6 +1,30 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { slugify } from "@/utils/slugify";
+import { DndContext, closestCenter } from "@dnd-kit/core";
+
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+
+import { CSS } from "@dnd-kit/utilities";
+function SortableRow({ menu, children }) {
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id: menu.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <tr ref={setNodeRef} style={style}>
+      {children({ attributes, listeners })}
+    </tr>
+  );
+}
 export default function Menu() {
   const [autoSlug, setAutoSlug] = useState(true);
   const [menus, setMenus] = useState([]);
@@ -12,38 +36,50 @@ export default function Menu() {
   // 👉 language id (nếu có đa ngôn ngữ)
   const lang = 1;
   // ================= FETCH MENU =================
+  const fetchMenu = async () => {
+    try {
+      const res = await fetch("/api/admin/menu.php?act=list");
+      const result = await res.json();
+
+      if (result.status) {
+        setMenus(result.data);
+      }
+    } catch (err) {
+      console.error("Menu error:", err);
+    }
+  };
   useEffect(() => {
-    const fetchMenu = async () => {
-      try {
-        const res = await fetch("/api/admin/menu.php?act=list");
-        const result = await res.json();
+    let isMounted = true;
 
-        if (result.status) {
-          setMenus(result.data);
+    const loadData = async () => {
+      try {
+        // ===== MENU =====
+        const resMenu = await fetch("/api/admin/menu.php?act=list");
+        const dataMenu = await resMenu.json();
+
+        if (isMounted && dataMenu.status) {
+          setMenus(dataMenu.data);
+        }
+
+        // ===== MODULE =====
+        const resMod = await fetch("/api/admin/component.php?act=list_active");
+        const dataMod = await resMod.json();
+
+        if (isMounted && dataMod.status) {
+          setModules(dataMod.data);
         }
       } catch (err) {
-        console.error("Menu error:", err);
-      }
-
-      setLoading(false);
-    };
-
-    fetchMenu();
-
-    const fetchModules = async () => {
-      try {
-        const res = await fetch("/api/admin/component.php?act=list_active");
-        const result = await res.json();
-
-        if (result.status) {
-          setModules(result.data);
-        }
-      } catch (err) {
-        console.error("Module error:", err);
+        console.error("Load error:", err);
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
 
-    fetchModules();
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
   // ================= TOGGLE ACTIVE =================
   const handleToggle = async (id, currentValue) => {
@@ -86,10 +122,12 @@ export default function Menu() {
   };
   // ================= SAVE EDIT =================
   const handleSave = async () => {
+    const isEdit = !!editItem.id;
     const formData = new FormData();
 
-    formData.append("id", editItem.id);
-    formData.append("comp", editItem.module_id || 0);
+    if (isEdit) formData.append("id", editItem.id);
+
+    formData.append("comp", editItem.comp || 0);
     formData.append("link_out", editItem.link_out || "");
     formData.append("has_sub", editItem.has_sub || 0);
 
@@ -100,7 +138,9 @@ export default function Menu() {
     formData.append("unique_key", detail.unique_key || "");
     formData.append("languageid", lang);
 
-    const res = await fetch("/api/admin/menu.php?act=update", {
+    const act = isEdit ? "update" : "add";
+
+    const res = await fetch(`/api/admin/menu.php?act=${act}`, {
       method: "POST",
       body: formData,
     });
@@ -108,79 +148,305 @@ export default function Menu() {
     const result = await res.json();
 
     if (result.status) {
-      setMenus((prev) =>
-        prev.map((item) =>
-          item.id === editItem.id ? { ...item, ...editItem } : item
-        )
-      );
+      // setMenus((prev) =>
+      //   prev.map((item) =>
+      //     item.id === editItem.id ? { ...item, ...editItem } : item
+      //   )
+      // );
+      await fetchMenu();
 
       setShowModal(false);
     } else {
       alert("Cập nhật thất bại");
     }
   };
+  ////kéo thả
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = menus.findIndex((m) => m.id === active.id);
+    const newIndex = menus.findIndex((m) => m.id === over.id);
+
+    const newMenus = arrayMove(menus, oldIndex, newIndex);
+
+    // cập nhật num theo thứ tự mới
+    const updated = newMenus.map((item, index) => ({
+      ...item,
+      num: index + 1,
+    }));
+
+    setMenus(updated);
+
+    const formData = new FormData();
+
+    updated.forEach((item) => {
+      formData.append("id[]", item.id);
+      formData.append("num[]", item.num);
+    });
+
+    await fetch("/api/admin/menu.php?act=reorder", {
+      method: "POST",
+      body: formData,
+    });
+  };
+  ////Thêm mới
+  const handleAddNew = () => {
+    setAutoSlug(true);
+    setLinkType("module");
+
+    setEditItem({
+      id: null,
+      comp: "",
+      link_out: "",
+      has_sub: 0,
+      details: {
+        [lang]: {
+          name: "",
+          unique_key: "",
+        },
+      },
+    });
+
+    setShowModal(true);
+  };
+  ////xoÁ
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const handleDelete = (id) => {
+    setDeleteId(id);
+    setShowDeleteModal(true);
+  };
+  const confirmDelete = async () => {
+    const formData = new FormData();
+    formData.append("id", deleteId);
+
+    try {
+      const res = await fetch("/api/admin/menu.php?act=delete", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await res.json();
+
+      if (result.status) {
+        const updated = menus
+          .filter((item) => item.id !== deleteId)
+          .map((item, index) => ({
+            ...item,
+            num: index + 1,
+          }));
+
+        setMenus(updated);
+        setShowDeleteModal(false);
+        setDeleteId(null);
+      } else {
+        alert("Xoá thất bại");
+      }
+    } catch {
+      alert("Lỗi server");
+    }
+  };
+  ////Xoá nhiều
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [showDeleteMultiModal, setShowDeleteMultiModal] = useState(false);
+  const handleDeleteMultiple = () => {
+    if (!selectedIds.length) return;
+    setShowDeleteMultiModal(true);
+  };
+  const confirmDeleteMultiple = async () => {
+    const formData = new FormData();
+
+    selectedIds.forEach((id) => {
+      formData.append("ids[]", id);
+    });
+
+    try {
+      const res = await fetch("/api/admin/menu.php?act=delete_multiple", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await res.json();
+
+      if (result.status) {
+        const updated = menus
+          .filter((item) => !selectedIds.includes(item.id))
+          .map((item, index) => ({
+            ...item,
+            num: index + 1,
+          }));
+
+        setMenus(updated);
+        setSelectedIds([]);
+        setShowDeleteMultiModal(false);
+      } else {
+        alert("Xoá thất bại");
+      }
+    } catch {
+      alert("Lỗi server");
+    }
+  };
+
+  ////xem nhanh
+  const handlePreview = (menu) => {
+    let url = "";
+
+    // Nếu có link ngoài
+    if (menu.link_out) {
+      url = menu.link_out;
+    } else {
+      // Link nội bộ theo slug
+      const detail = menu.details?.[lang];
+      const slug = detail?.unique_key || menu.id;
+
+      url = `/${slug}`;
+    }
+
+    window.open(url, "_blank");
+  };
 
   if (loading) return <div>Đang tải menu...</div>;
 
   return (
     <main>
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th className="col-order txt-center">Thứ tự</th>
-            <th className="col-actions"> Link</th>
-            <th>Tên</th>
-            <th className="col-status txt-center">Active</th>
-            <th className="col-action txt-center">Action</th>
-          </tr>
-        </thead>
+      {/* ===== Buttons ===== */}
+      <div className="flex-buttons">
+        <button className="c-btn btn-add" onClick={handleAddNew}>
+          <i className="fa-solid fa-circle-plus"></i> Thêm mới
+        </button>
+        <button
+          className="c-btn btn-delete-multi"
+          disabled={!selectedIds.length}
+          onClick={handleDeleteMultiple}
+        >
+          <i className="fa-solid fa-trash-can"></i> Xoá đã chọn
+        </button>
+      </div>
+      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th className="col-id txt-center">
+                <input
+                  className="check-del"
+                  type="checkbox"
+                  checked={
+                    menus.length > 0 &&
+                    menus.every((m) => selectedIds.includes(m.id))
+                  }
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedIds(menus.map((m) => m.id));
+                    } else {
+                      setSelectedIds([]);
+                    }
+                  }}
+                />
+              </th>
+              <th className="col-order txt-center">Thứ tự</th>
+              <th className="col-actions"> Link</th>
+              <th>Tên</th>
+              <th className="col-status txt-center">Active</th>
+              <th className="col-action txt-center">Action</th>
+            </tr>
+          </thead>
 
-        <tbody>
-          {menus.map((menu) => {
-            const detail = menu.details?.[lang];
+          <SortableContext
+            items={menus.map((m) => m.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <tbody>
+              {menus.map((menu) => {
+                const detail = menu.details?.[lang];
+                const name = detail?.name || "Menu";
+                const link =
+                  menu.link_out || `${detail?.unique_key || "page-" + menu.id}`;
 
-            const name = detail?.name || "Menu";
-            const link =
-              menu.link_out || `${detail?.unique_key || "page-" + menu.id}`;
+                return (
+                  <SortableRow key={menu.id} menu={menu}>
+                    {({ attributes, listeners }) => (
+                      <>
+                        <td className="col-id txt-center">
+                          <input
+                            className="check-del"
+                            type="checkbox"
+                            checked={selectedIds.includes(menu.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedIds((prev) => [...prev, menu.id]);
+                              } else {
+                                setSelectedIds((prev) =>
+                                  prev.filter((id) => id !== menu.id)
+                                );
+                              }
+                            }}
+                          />
+                        </td>
+                        <td className="txt-center">{menu.num}</td>
 
-            return (
-              <tr key={menu.id}>
-                <td className="txt-center">{menu.id}</td>
-                <td>{link}</td>
-                <td>{name}</td>
+                        <td>{link}</td>
+                        <td>{name}</td>
 
-                {/* ===== ACTIVE SWITCH ===== */}
-                <td className="col-status txt-center">
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={menu.active == 1}
-                      onChange={() => handleToggle(menu.id, menu.active)}
-                    />
-                    <span className="slider"></span>
-                  </label>
-                </td>
+                        <td className="col-status txt-center">
+                          <label className="switch">
+                            <input
+                              type="checkbox"
+                              checked={menu.active == 1}
+                              onChange={() =>
+                                handleToggle(menu.id, menu.active)
+                              }
+                            />
+                            <span className="slider"></span>
+                          </label>
+                        </td>
 
-                {/* ===== ACTION ===== */}
-                <td className="col-actions txt-center">
-                  <div className="btn-actions">
-                    <button
-                      className="btn-edit act"
-                      onClick={() => handleEdit({ ...menu, name })}
-                    >
-                      <i className="fa-regular fa-pen-to-square"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                        <td className="col-actions txt-center">
+                          <div className="btn-actions">
+                            <button
+                              className="btn-view act"
+                              onClick={() => handlePreview(menu)}
+                              title="Xem nhanh"
+                            >
+                              <i className="fa-regular fa-eye"></i>
+                            </button>
+                            <button
+                              className="btn-edit act"
+                              onClick={() => handleEdit({ ...menu, name })}
+                            >
+                              <i className="fa-regular fa-pen-to-square"></i>
+                            </button>
+                            <button
+                              className="btn-delete act"
+                              onClick={() => handleDelete(menu.id)}
+                              title="Xoá"
+                            >
+                              <i className="fa-solid fa-trash"></i>
+                            </button>
+                            <div
+                              className="drag-handle act"
+                              {...attributes}
+                              {...listeners}
+                            >
+                              <i className="fa-solid fa-up-down"></i>
+                            </div>
+                          </div>
+                        </td>
+                      </>
+                    )}
+                  </SortableRow>
+                );
+              })}
+            </tbody>
+          </SortableContext>
+        </table>
+      </DndContext>
+
       {showModal && (
         <div className="modal" onClick={() => setShowModal(false)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <h3>Chỉnh sửa Menu</h3>
+            <h3>{editItem?.id ? "Chỉnh sửa Menu" : "Thêm mới Menu"}</h3>
 
             {/* ===== NAME ===== */}
             <label>Tên menu</label>
@@ -311,6 +577,58 @@ export default function Menu() {
               <button
                 onClick={() => setShowModal(false)}
                 className="btn-cancel"
+              >
+                Huỷ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeleteModal && (
+        <div className="modal" onClick={() => setShowDeleteModal(false)}>
+          <div
+            className="modal-box delete-box"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>Xác nhận xoá</h3>
+
+            <p>Bạn có chắc muốn xoá menu này không?</p>
+
+            <div className="modal-actions">
+              <button className="btn-confirm" onClick={confirmDelete}>
+                <i className="fa-solid fa-trash"></i> Xoá
+              </button>
+
+              <button
+                className="btn-cancel"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Huỷ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeleteMultiModal && (
+        <div className="modal" onClick={() => setShowDeleteMultiModal(false)}>
+          <div
+            className="modal-box delete-box"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>Xác nhận xoá</h3>
+
+            <p>
+              Bạn có chắc muốn xoá <b>{selectedIds.length}</b> menu đã chọn?
+            </p>
+
+            <div className="modal-actions">
+              <button className="btn-confirm" onClick={confirmDeleteMultiple}>
+                <i className="fa-solid fa-trash"></i> Xoá
+              </button>
+
+              <button
+                className="btn-cancel"
+                onClick={() => setShowDeleteMultiModal(false)}
               >
                 Huỷ
               </button>
