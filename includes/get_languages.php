@@ -63,11 +63,3 @@ switch ($langid) {
         $contact = 'Liên hệ';
         break;
 }
-
-// --- Gửi vào Smarty ---
-$smarty->assign('lang', $lang);
-$smarty->assign('langid', $langid);
-$smarty->assign('lang_prefix', $lang_prefix);
-$smarty->assign('languages', $languages);
-$smarty->assign("home", $home);
-$smarty->assign("contact", $contact);
