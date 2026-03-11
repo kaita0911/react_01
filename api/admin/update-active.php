@@ -37,7 +37,9 @@ $allowedTables = [
     'component',
     'infos',
     'colors',
-    'menu'
+    'menu',
+    'footer',
+    'language'
 ];
 
 $allowedColumns = [

@@ -16,6 +16,54 @@ require_once("../../includes/config.php");
 $act = isset($_GET['act']) ? $_GET['act'] : '';
 
 switch ($act) {
+    case "comp":
+
+        $module = isset($_GET['module']) ? $_GET['module'] : '';
+    
+        $sql = "
+        SELECT *
+        FROM {$GLOBALS['db_sp']}.component
+        WHERE `do` = ?
+        LIMIT 1
+        ";
+    
+        $row = $GLOBALS['sp']->GetRow($sql, array($module));
+    
+        $data = [];
+    
+        if ($row) {
+            foreach ($row as $key => $value) {
+    
+                // chỉ lấy field có value = 1
+                if (is_numeric($key)) continue;
+                if ($key == "id") continue;
+                if ($value == 1) {
+                    $data[$key] = $value;
+                }
+    
+            }
+        }
+    
+        echo json_encode([
+            "status" => true,
+            "data" => $data
+        ]);
+    
+    break;
+     // săp xếp
+    case "reorder":
+        $ids  = isset($_POST['id']) ? $_POST['id'] : array();
+        $nums = isset($_POST['num']) ? $_POST['num'] : array();
+        foreach ($ids as $i => $id) {
+
+        $id  = intval($id);
+        $num = isset($nums[$i]) ? intval($nums[$i]) : 0;
+
+        $conn->query("UPDATE component SET num=$num WHERE id=$id");
+        }
+
+        echo json_encode(["status" => true]);
+    break;
     // ================= LIST ACTIVE =================
     case "list_active":
 
@@ -34,58 +82,63 @@ switch ($act) {
     ));
     break;
     // ================= UPDATE =================
-    case "update":  
+    case "update":
 
-        $id     = isset($_POST['id']) ? intval($_POST['id']) : 0;
-        $num    = isset($_POST['num']) ? intval($_POST['num']) : 0;
-        $do     = isset($_POST['do']) ? trim($_POST['do']) : '';
-        $active = isset($_POST['active']) ? intval($_POST['active']) : 1;
-        $name   = isset($_POST['detail_name']) ? trim($_POST['detail_name']) : '';
-        //$content = isset($_POST['content']) ? trim($_POST['content']) : '';
-
-        if ($id <= 0 || $do == '' || $name == '') {
+        $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+        
+        if ($id <= 0) {
             echo json_encode([
                 "status" => false,
-                "message" => "Thiếu dữ liệu"
+                "message" => "Invalid ID"
             ]);
-            break;
+            exit;
         }
-
-        try {
-
-            // 1️⃣ Update bảng component
-            $sql = "UPDATE {$GLOBALS['db_sp']}.component
-                    SET num=?, do=?, active=?
-                    WHERE id=?";
-
-            $GLOBALS['sp']->execute($sql, [$num, $do, $active, $id]);
-
-            // 2️⃣ Update bảng component_detail
-            $sql2 = "UPDATE {$GLOBALS['db_sp']}.component_detail
-                    SET name=?
-                    WHERE component_id=?";
-
-            $GLOBALS['sp']->execute($sql2, [$name, $id]);
-
-            echo json_encode([
-                "status" => true,
-                "data" => [
-                    "id" => $id,
-                    "num" => $num,
-                    "do" => $do,
-                    "active" => $active,
-                    "detail_name" => $name
-                ]
-            ]);
-
-        } catch (Exception $e) {
-
+        
+        /* lấy danh sách column trong table */
+        $columns = [];
+        $rs = $GLOBALS['sp']->Execute("SHOW COLUMNS FROM {$GLOBALS['db_sp']}.component");
+        
+        while (!$rs->EOF) {
+            $columns[] = $rs->fields['Field'];
+            $rs->MoveNext();
+        }
+        
+        $fields = [];
+        $values = [];
+        
+        foreach ($_POST as $key => $value) {
+        
+            if ($key == "id" || $key == "act") continue;
+        
+            // chỉ update nếu column tồn tại trong table
+            if (!in_array($key, $columns)) continue;
+        
+            $fields[] = "$key=?";
+            $values[] = $value;
+        }
+        
+        if (empty($fields)) {
             echo json_encode([
                 "status" => false,
-                "message" => "Lỗi hệ thống: " . $e->getMessage()
+                "message" => "No data to update"
             ]);
+            exit;
         }
-
+        
+        $values[] = $id;
+        
+        $sql = "
+        UPDATE {$GLOBALS['db_sp']}.component
+        SET ".implode(",", $fields)."
+        WHERE id=?
+        ";
+        
+        $GLOBALS['sp']->Execute($sql, $values);
+        
+        echo json_encode([
+            "status" => true
+        ]);
+        
         break;
     // ================= ADD =================
     case "add":
@@ -149,7 +202,7 @@ switch ($act) {
                 FROM {$GLOBALS['db_sp']}.component AS c
                 LEFT JOIN {$GLOBALS['db_sp']}.component_detail AS d
                 ON c.id = d.component_id
-                ORDER BY c.id DESC";
+                ORDER BY c.num ASC";
 
         $rs = $GLOBALS['sp']->getAll($sql);
 
