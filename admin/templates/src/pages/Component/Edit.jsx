@@ -168,7 +168,10 @@ export default function Edit() {
           <div className="box-feature">
             {attrs.map((attr) => (
               <label key={attr.name} className="feature-item">
-                {attr.label}
+                <span>
+                  <small>{attr.name}</small>
+                  {attr.label}
+                </span>
 
                 <input
                   type="checkbox"
@@ -187,7 +190,10 @@ export default function Edit() {
           <div className="box-feature">
             {categoryAttrs.map((attr) => (
               <label key={attr.name} className="feature-item">
-                {attr.label}
+                <span>
+                  <small>{attr.name}</small>
+                  {attr.label}
+                </span>
 
                 <input
                   type="checkbox"
@@ -206,7 +212,10 @@ export default function Edit() {
           <div className="box-feature">
             {moduleAttrs.map((attr) => (
               <label key={attr.name} className="feature-item">
-                {attr.label}
+                <span>
+                  <small>{attr.name}</small>
+                  {attr.label}
+                </span>
 
                 <input
                   type="checkbox"

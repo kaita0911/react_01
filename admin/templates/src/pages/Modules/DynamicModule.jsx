@@ -141,13 +141,13 @@ export default function DynamicModule() {
   };
 
   // ================= TOGGLE ACTIVE =================
-  const handleToggle = async (id, currentValue) => {
+  const handleToggle = async (id, column, currentValue) => {
     const newValue = currentValue == 1 ? 0 : 1;
 
     const formData = new FormData();
     formData.append("id", id);
     formData.append("table", "articlelist");
-    formData.append("column", "active");
+    formData.append("column", column);
     formData.append("value", newValue);
 
     try {
@@ -157,11 +157,12 @@ export default function DynamicModule() {
       });
 
       const result = await res.json();
+      console.log(result);
 
       if (result.success) {
         setArticles((prev) =>
           prev.map((item) =>
-            item.id === id ? { ...item, active: newValue } : item
+            item.id === id ? { ...item, [column]: newValue } : item
           )
         );
       }
@@ -169,6 +170,34 @@ export default function DynamicModule() {
       alert("Lỗi server");
     }
   };
+  // const handleToggle = async (id, currentValue) => {
+  //   const newValue = currentValue == 1 ? 0 : 1;
+
+  //   const formData = new FormData();
+  //   formData.append("id", id);
+  //   formData.append("table", "articlelist");
+  //   formData.append("column", "active");
+  //   formData.append("value", newValue);
+
+  //   try {
+  //     const res = await fetch("/api/admin/update-active.php", {
+  //       method: "POST",
+  //       body: formData,
+  //     });
+
+  //     const result = await res.json();
+
+  //     if (result.success) {
+  //       setArticles((prev) =>
+  //         prev.map((item) =>
+  //           item.id === id ? { ...item, active: newValue } : item
+  //         )
+  //       );
+  //     }
+  //   } catch {
+  //     alert("Lỗi server");
+  //   }
+  // };
   // ===== SCROLL TOP =====
   const scrollTop = () => {
     const content = document.querySelector(".content");
@@ -224,7 +253,7 @@ export default function DynamicModule() {
             disabled={selectedIds.length === 0}
             onClick={handleDeleteMultiple}
           >
-            <i className="fa-solid fa-trash-can"></i> Xoá đã chọn{" "}
+            <i className="fa-solid fa-trash-can"></i> Xoá đã chọn
             {selectedIds.length > 0 && `(${selectedIds.length})`}
           </button>
         </div>
@@ -251,6 +280,9 @@ export default function DynamicModule() {
                 <th className="col-order txt-center">Thứ tự</th>
                 <th className="col-img txt-center">Hình</th>
                 <th>Tên</th>
+                <th className="col-status txt-center">Mới</th>
+                <th className="col-status txt-center">Hot</th>
+                <th className="col-status txt-center">Most View</th>
                 <th className="col-status txt-center">Active</th>
                 <th className="txt-center">Action</th>
               </tr>
@@ -285,14 +317,53 @@ export default function DynamicModule() {
                             )}
                           </td>
                           <td>{item.name}</td>
-
+                          <td className="txt-center">
+                            <label className="switch">
+                              <input
+                                type="checkbox"
+                                checked={item.new == 1}
+                                onChange={() =>
+                                  handleToggle(item.id, "new", item.new)
+                                }
+                              />
+                              <span className="slider"></span>
+                            </label>
+                          </td>
+                          <td className="txt-center">
+                            <label className="switch">
+                              <input
+                                type="checkbox"
+                                checked={item.hot == 1}
+                                onChange={() =>
+                                  handleToggle(item.id, "hot", item.hot)
+                                }
+                              />
+                              <span className="slider"></span>
+                            </label>
+                          </td>
+                          <td className="txt-center">
+                            <label className="switch">
+                              <input
+                                type="checkbox"
+                                checked={item.mostview == 1}
+                                onChange={() =>
+                                  handleToggle(
+                                    item.id,
+                                    "mostview",
+                                    item.mostview
+                                  )
+                                }
+                              />
+                              <span className="slider"></span>
+                            </label>
+                          </td>
                           <td className="txt-center">
                             <label className="switch">
                               <input
                                 type="checkbox"
                                 checked={item.active == 1}
                                 onChange={() =>
-                                  handleToggle(item.id, item.active)
+                                  handleToggle(item.id, "active", item.active)
                                 }
                               />
                               <span className="slider"></span>

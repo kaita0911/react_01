@@ -90,7 +90,7 @@ case "list":
         SELECT
             a.id,
             a.num,a.img_thumb_vn,
-            a.active,
+            a.active, a.hot, a.mostview, a.new ,
             (
                 SELECT name
                 FROM {$GLOBALS['db_sp']}.articlelist_detail
@@ -100,7 +100,7 @@ case "list":
             ) AS name
         FROM {$GLOBALS['db_sp']}.articlelist a
         WHERE a.comp=?
-        ORDER BY a.num ASC
+        ORDER BY a.id desc
         LIMIT $start,$limit
     ", array($comp_id));
 
@@ -124,7 +124,11 @@ case "add":
 
     $module = isset($_POST['module']) ? trim($_POST['module']) : '';
     $active = isset($_POST['active']) ? intval($_POST['active']) : 1;
-    
+    $new = isset($_POST['new']) ? intval($_POST['new']) : 1;
+    $hot = isset($_POST['hot']) ? intval($_POST['hot']) : 1;
+    $mostview = isset($_POST['mostview']) ? intval($_POST['mostview']) : 1;
+    $price = isset($_POST['price']) ? intval($_POST['price']) : '';
+    $priceold = isset($_POST['priceold']) ? intval($_POST['priceold']) : '';
     $languages = isset($_POST['languages']) ? json_decode($_POST['languages'], true) : [];
   
     if($module=='' || empty($languages)){
@@ -186,12 +190,68 @@ case "add":
     /* insert articlelist */
     $GLOBALS['sp']->Execute("
         INSERT INTO {$GLOBALS['db_sp']}.articlelist
-        (comp,num,active,img_thumb_vn)
-        VALUES(?,?,?,?)
-    ", array($comp_id,$num,$active,$hinhanh));
+        (comp,num,active,hot,new,mostview,img_thumb_vn)
+        VALUES(?,?,?,?,?,?,?)
+    ", array($comp_id,$num,$active,$hot,$new,$mostview,$hinhanh));
     
     $id = $GLOBALS['sp']->Insert_ID();
-    
+    /* insert price nếu có nhập */
+
+    if($price !== '' || $priceold !== ''){
+
+        $GLOBALS['sp']->Execute("
+            INSERT INTO {$GLOBALS['db_sp']}.articlelist_price
+            (articlelist_id,price,priceold)
+            VALUES (?,?,?)
+        ",[
+            $id,
+            $price,
+            $priceold
+        ]);
+
+    }
+    /* upload gallery */
+    if(isset($_FILES['gallery'])){
+
+        $uploadFolder = "hinh-anh/gallery/";
+        $uploadDir = $_SERVER['DOCUMENT_ROOT']."/".$uploadFolder;
+
+        if(!is_dir($uploadDir)){
+            mkdir($uploadDir,0777,true);
+        }
+
+        foreach($_FILES['gallery']['name'] as $k=>$name){
+
+            if($_FILES['gallery']['error'][$k]==0){
+        
+                $ext = pathinfo($name, PATHINFO_EXTENSION);
+                $filename = time().'_'.$k.'_'.rand(1000,9999).'.'.$ext;
+        
+                move_uploaded_file(
+                    $_FILES['gallery']['tmp_name'][$k],
+                    $uploadDir.$filename
+                );
+        
+                $img = $uploadFolder.$filename;
+        
+                $num = isset($_POST['gallery_num'][$k])
+                ? intval($_POST['gallery_num'][$k])
+                : ($k+1);
+        
+                $GLOBALS['sp']->Execute("
+                INSERT INTO gallery_sp
+                (articlelist_id,img_vn,num)
+                VALUES(?,?,?)
+                ",[
+                    $id,
+                    $img,
+                    $num
+                ]);
+        
+            }
+        }
+
+    }
     /* insert detail theo language */
     foreach($languages as $langid => $data){
     
@@ -248,13 +308,26 @@ case "add":
                 "message"=>"Không tìm thấy dữ liệu"
             ]);
         }
-      /* lấy price */
+        /* lấy gallery */
+        $gallery = $GLOBALS['sp']->getAll("
+        SELECT id,img_vn,num
+        FROM gallery_sp
+        WHERE articlelist_id=?
+        ORDER BY num ASC
+        ",[$id]);
+        /* lấy price */
         $price = $GLOBALS['sp']->GetRow("
             SELECT price, priceold
             FROM {$GLOBALS['db_sp']}.articlelist_price
             WHERE articlelist_id=?
             LIMIT 1
         ", [$id]);
+        if(!$price){
+            $price = [
+                "price" => 0,
+                "priceold" => 0
+            ];
+        }
         /* lấy detail đa ngôn ngữ */
         $rs = $GLOBALS['sp']->Execute("
             SELECT languageid,name,unique_key,short,content
@@ -280,10 +353,14 @@ case "add":
             "status"=>true,
             "data"=>[
                 "active"=>$article['active'],
+                "hot"=>$article['hot'],
+                "new"=>$article['new'],
+                "mostview"=>$article['mostview'],
                 "img_thumb_vn"=>$article['img_thumb_vn'],
                 "languages"=>$languages,
                 "price"=>$price['price'],
                 "priceold"=>$price['priceold'],
+                "gallery"=>$gallery
             ]
         ]);
     
@@ -297,6 +374,9 @@ case "update":
     $id = isset($_POST['id']) ? trim($_POST['id']) : '';
     $module = isset($_POST['module']) ? trim($_POST['module']) : '';
     $active = isset($_POST['active']) ? intval($_POST['active']) : 1;
+    $new = isset($_POST['new']) ? intval($_POST['new']) : 1;
+    $hot = isset($_POST['hot']) ? intval($_POST['hot']) : 1;
+    $mostview = isset($_POST['mostview']) ? intval($_POST['mostview']) : 1;
     $price = isset($_POST['price']) ? intval($_POST['price']) : 0;
     $priceold = isset($_POST['priceold']) ? intval($_POST['priceold']) : 0;
     $languages = isset($_POST['languages']) ? json_decode($_POST['languages'], true) : [];
@@ -326,7 +406,38 @@ case "update":
     ",[$id]);
     
     $hinhanh = $oldImage;
+    ///////
+    $delete_gallery = isset($_POST['delete_gallery'])
+    ? json_decode($_POST['delete_gallery'],true)
+    : [];
+    if(!empty($delete_gallery)){
+
+        foreach($delete_gallery as $gid){
     
+            $row = $GLOBALS['sp']->GetRow("
+            SELECT img_vn
+            FROM gallery_sp
+            WHERE id=?
+            ",[$gid]);
+    
+            if($row){
+    
+                $file = $_SERVER['DOCUMENT_ROOT']."/".$row['img_vn'];
+    
+                if(file_exists($file)){
+                    unlink($file);
+                }
+    
+            }
+    
+            $GLOBALS['sp']->Execute("
+            DELETE FROM gallery_sp
+            WHERE id=?
+            ",[$gid]);
+    
+        }
+    
+    }
     /* upload ảnh mới */
     if(isset($_FILES['hinhanh']) && $_FILES['hinhanh']['error']==0){
     
@@ -362,7 +473,73 @@ case "update":
         }
     
     }
-    /* update price */
+    /* update vị trí gallery */
+    if(isset($_POST['gallery_update'])){
+
+        foreach($_POST['gallery_update'] as $g){
+
+            $g = json_decode($g,true);
+
+            $gid = $g['id'];
+            $num = $g['num'];
+
+            $GLOBALS['sp']->Execute("
+            UPDATE gallery_sp
+            SET num=?
+            WHERE id=?
+            ",[
+                $num,
+                $gid
+            ]);
+
+        }
+
+    }
+    /* upload gallery */
+    if(isset($_FILES['gallery'])){
+
+        $uploadFolder = "hinh-anh/gallery/";
+        $uploadDir = $_SERVER['DOCUMENT_ROOT']."/".$uploadFolder;
+
+        if(!is_dir($uploadDir)){
+            mkdir($uploadDir,0777,true);
+        }
+
+        foreach($_FILES['gallery']['name'] as $k=>$name){
+
+            if($_FILES['gallery']['error'][$k]==0){
+        
+                $ext = pathinfo($name, PATHINFO_EXTENSION);
+                $filename = time().'_'.$k.'_'.rand(1000,9999).'.'.$ext;
+        
+                move_uploaded_file(
+                    $_FILES['gallery']['tmp_name'][$k],
+                    $uploadDir.$filename
+                );
+        
+                $img = $uploadFolder.$filename;
+        
+                /* lấy num từ react */
+                $num = isset($_POST['gallery_new_num'][$k])
+                ? intval($_POST['gallery_new_num'][$k])
+                : ($k+1);
+        
+                $GLOBALS['sp']->Execute("
+                INSERT INTO gallery_sp
+                (articlelist_id,img_vn,num)
+                VALUES(?,?,?)
+                ",[
+                    $id,
+                    $img,
+                    $num
+                ]);
+        
+            }
+        
+        }
+    }
+
+   /* update price */
     $exists = $GLOBALS['sp']->getOne("
     SELECT COUNT(*)
     FROM {$GLOBALS['db_sp']}.articlelist_price
@@ -394,12 +571,12 @@ case "update":
         ]);
 
     }
-    /* update article */
+    /* update articlelist */
     $GLOBALS['sp']->Execute("
     UPDATE {$GLOBALS['db_sp']}.articlelist
-    SET active=?, img_thumb_vn=?
+    SET active=?, img_thumb_vn=?, new=?,hot=?,mostview=?
     WHERE id=?
-    ",[$active,$hinhanh,$id]);
+    ",[$active,$hinhanh,$new,$hot,$mostview,$id]);
     
     /* update detail */
     foreach($languages as $langid => $data){
@@ -472,6 +649,32 @@ case "delete":
         }
 
     }
+    /* xoá gallery */
+    $rows = $GLOBALS['sp']->getAll("
+    SELECT img_vn
+    FROM gallery_sp
+    WHERE articlelist_id=?
+    ",[$id]);
+
+    foreach($rows as $r){
+
+        $file = $_SERVER['DOCUMENT_ROOT']."/".$r['img'];
+
+        if(file_exists($file)){
+            unlink($file);
+        }
+
+    }
+
+    $GLOBALS['sp']->Execute("
+    DELETE FROM gallery_sp
+    WHERE articlelist_id=?
+    ",[$id]);
+    /* xoá price */
+    $GLOBALS['sp']->Execute("
+    DELETE FROM {$GLOBALS['db_sp']}.articlelist_price
+    WHERE articlelist_id=?
+    ",[$id]);
     /* xoá detail */
     $GLOBALS['sp']->Execute("
        DELETE FROM {$GLOBALS['db_sp']}.articlelist_detail
@@ -543,8 +746,33 @@ case "delete_multi":
             }
     
         }
-    
-        /* xoá detail */
+        /* xoá gallery */
+        $rows = $GLOBALS['sp']->GetAll("
+        SELECT img_vn
+        FROM gallery_sp
+        WHERE articlelist_id=?
+        ",[$id]);
+
+        foreach($rows as $r){
+
+        $file = $_SERVER['DOCUMENT_ROOT']."/".$r['img_vn'];
+
+        if(file_exists($file) && is_file($file)){
+            unlink($file);
+        }
+
+        }
+
+        $GLOBALS['sp']->Execute("
+        DELETE FROM gallery_sp
+        WHERE articlelist_id=?
+        ",[$id]);
+        /* xoá price */
+        $GLOBALS['sp']->Execute("
+        DELETE FROM {$GLOBALS['db_sp']}.articlelist_price
+        WHERE articlelist_id=?
+        ",[$id]);
+        /* xoá detail   */
         $GLOBALS['sp']->Execute("
             DELETE FROM {$GLOBALS['db_sp']}.articlelist_detail
             WHERE articlelist_id=?

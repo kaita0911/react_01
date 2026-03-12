@@ -25,14 +25,12 @@ export default function UploadImage({ currentImage, onChange }) {
         Chọn ảnh
         <input type="file" accept="image/*" onChange={handleChange} />
       </label>
-
-      <div className="upload-name">{fileName}</div>
-
       {preview && (
         <div className="upload-preview">
           <img src={preview} alt="preview" />
         </div>
       )}
+      {/* <div className="upload-name">{fileName}</div> */}
     </div>
   );
 }
