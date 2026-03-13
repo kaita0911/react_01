@@ -100,7 +100,7 @@ case "list":
             ) AS name
         FROM {$GLOBALS['db_sp']}.articlelist a
         WHERE a.comp=?
-        ORDER BY a.id desc
+        ORDER BY a.num desc
         LIMIT $start,$limit
     ", array($comp_id));
 

@@ -29,12 +29,31 @@ function SortableRow({ item, children }) {
 export default function DynamicModule() {
   const { module } = useParams();
   const navigate = useNavigate();
+  const [comp, setComp] = useState(null);
 
   const [articles, setArticles] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const limit = 35;
   const totalPage = Math.ceil(total / limit);
+  /* ================= LOAD COMPONENT ================= */
+
+  useEffect(() => {
+    if (!module) return;
+
+    const loadComp = async () => {
+      const res = await fetch(
+        `/api/admin/component.php?act=comp&module=${module}`
+      );
+      const data = await res.json();
+
+      if (data.status) {
+        setComp(data.data);
+      }
+    };
+
+    loadComp();
+  }, [module]);
 
   // ===== LOAD DATA =====
   const loadData = useCallback(() => {
@@ -45,8 +64,8 @@ export default function DynamicModule() {
     )
       .then((res) => res.json())
       .then((result) => {
-        //console.log("API items:", result.data.length); // 👈 thêm dòng này
-
+        // //console.log("API items:", result.data.length); // 👈 thêm dòng này
+        console.log("API RESULT:", result); // 👈 thêm dòng này
         if (result.status) {
           setArticles(result.data || []);
           setTotal(result.total || 0);
@@ -58,10 +77,10 @@ export default function DynamicModule() {
     loadData();
   }, [loadData]);
 
-  // reset page khi đổi module
-  useEffect(() => {
-    setPage(1);
-  }, [module]);
+  // // reset page khi đổi module
+  // useEffect(() => {
+  //   setPage(1);
+  // }, [module]);
   // ================= DELETE =================
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
@@ -142,7 +161,7 @@ export default function DynamicModule() {
 
   // ================= TOGGLE ACTIVE =================
   const handleToggle = async (id, column, currentValue) => {
-    const newValue = currentValue == 1 ? 0 : 1;
+    const newValue = Number(currentValue) === 1 ? 0 : 1;
 
     const formData = new FormData();
     formData.append("id", id);
@@ -170,34 +189,6 @@ export default function DynamicModule() {
       alert("Lỗi server");
     }
   };
-  // const handleToggle = async (id, currentValue) => {
-  //   const newValue = currentValue == 1 ? 0 : 1;
-
-  //   const formData = new FormData();
-  //   formData.append("id", id);
-  //   formData.append("table", "articlelist");
-  //   formData.append("column", "active");
-  //   formData.append("value", newValue);
-
-  //   try {
-  //     const res = await fetch("/api/admin/update-active.php", {
-  //       method: "POST",
-  //       body: formData,
-  //     });
-
-  //     const result = await res.json();
-
-  //     if (result.success) {
-  //       setArticles((prev) =>
-  //         prev.map((item) =>
-  //           item.id === id ? { ...item, active: newValue } : item
-  //         )
-  //       );
-  //     }
-  //   } catch {
-  //     alert("Lỗi server");
-  //   }
-  // };
   // ===== SCROLL TOP =====
   const scrollTop = () => {
     const content = document.querySelector(".content");
@@ -219,11 +210,14 @@ export default function DynamicModule() {
     const newMenus = arrayMove(articles, oldIndex, newIndex);
 
     // cập nhật num theo thứ tự mới
+    // const updated = newMenus.map((item, index) => ({
+    //   ...item,
+    //   num: (page - 1) * limit + index + 1,
+    // }));
     const updated = newMenus.map((item, index) => ({
       ...item,
-      num: (page - 1) * limit + index + 1,
+      num: total - ((page - 1) * limit + index),
     }));
-
     setArticles(updated);
 
     const formData = new FormData();
@@ -238,6 +232,9 @@ export default function DynamicModule() {
       body: formData,
     });
   };
+  const hasNew = comp?.new == 1;
+  const hasHot = comp?.hot == 1;
+  const hasMostView = comp?.mostview == 1;
   return (
     <>
       <main>
@@ -280,9 +277,13 @@ export default function DynamicModule() {
                 <th className="col-order txt-center">Thứ tự</th>
                 <th className="col-img txt-center">Hình</th>
                 <th>Tên</th>
-                <th className="col-status txt-center">Mới</th>
-                <th className="col-status txt-center">Hot</th>
-                <th className="col-status txt-center">Most View</th>
+
+                {hasNew && <th className="col-status txt-center">Mới</th>}
+                {hasHot && <th className="col-status txt-center">Hot</th>}
+                {hasMostView && (
+                  <th className="col-status txt-center">Most View</th>
+                )}
+
                 <th className="col-status txt-center">Active</th>
                 <th className="txt-center">Action</th>
               </tr>
@@ -317,46 +318,53 @@ export default function DynamicModule() {
                             )}
                           </td>
                           <td>{item.name}</td>
-                          <td className="txt-center">
-                            <label className="switch">
-                              <input
-                                type="checkbox"
-                                checked={item.new == 1}
-                                onChange={() =>
-                                  handleToggle(item.id, "new", item.new)
-                                }
-                              />
-                              <span className="slider"></span>
-                            </label>
-                          </td>
-                          <td className="txt-center">
-                            <label className="switch">
-                              <input
-                                type="checkbox"
-                                checked={item.hot == 1}
-                                onChange={() =>
-                                  handleToggle(item.id, "hot", item.hot)
-                                }
-                              />
-                              <span className="slider"></span>
-                            </label>
-                          </td>
-                          <td className="txt-center">
-                            <label className="switch">
-                              <input
-                                type="checkbox"
-                                checked={item.mostview == 1}
-                                onChange={() =>
-                                  handleToggle(
-                                    item.id,
-                                    "mostview",
-                                    item.mostview
-                                  )
-                                }
-                              />
-                              <span className="slider"></span>
-                            </label>
-                          </td>
+
+                          {hasNew && (
+                            <td className="txt-center">
+                              <label className="switch">
+                                <input
+                                  type="checkbox"
+                                  checked={Number(item.new) === 1}
+                                  onChange={() =>
+                                    handleToggle(item.id, "new", item.new)
+                                  }
+                                />
+                                <span className="slider"></span>
+                              </label>
+                            </td>
+                          )}
+                          {hasHot && (
+                            <td className="txt-center">
+                              <label className="switch">
+                                <input
+                                  type="checkbox"
+                                  checked={Number(item.hot) === 1}
+                                  onChange={() =>
+                                    handleToggle(item.id, "hot", item.hot)
+                                  }
+                                />
+                                <span className="slider"></span>
+                              </label>
+                            </td>
+                          )}
+                          {hasMostView && (
+                            <td className="txt-center">
+                              <label className="switch">
+                                <input
+                                  type="checkbox"
+                                  checked={Number(item.mostview) === 1}
+                                  onChange={() =>
+                                    handleToggle(
+                                      item.id,
+                                      "mostview",
+                                      item.mostview
+                                    )
+                                  }
+                                />
+                                <span className="slider"></span>
+                              </label>
+                            </td>
+                          )}
                           <td className="txt-center">
                             <label className="switch">
                               <input

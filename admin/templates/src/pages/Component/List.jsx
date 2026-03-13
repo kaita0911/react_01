@@ -153,16 +153,6 @@ export default function General() {
     }
   };
   // ================= EDIT =================
-  const handleEdit = (item) => {
-    setForm({
-      id: item.id,
-      do: item.do,
-      detail_name: item.detail_name,
-      active: item.active,
-    });
-
-    setModal({ type: "edit" });
-  };
   const handleUpdate = async () => {
     const fd = new FormData();
 
