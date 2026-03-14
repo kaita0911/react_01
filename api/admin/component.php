@@ -19,37 +19,22 @@ switch ($act) {
     case "comp":
 
         $module = isset($_GET['module']) ? $_GET['module'] : '';
-    
+        
         $sql = "
-        SELECT *
+        SELECT id
         FROM {$GLOBALS['db_sp']}.component
         WHERE `do` = ?
         LIMIT 1
         ";
-    
+        
         $row = $GLOBALS['sp']->GetRow($sql, array($module));
-    
-        $data = [];
-    
-        if ($row) {
-            foreach ($row as $key => $value) {
-    
-                // chỉ lấy field có value = 1
-                if (is_numeric($key)) continue;
-                if ($key == "id") continue;
-                if ($value == 1) {
-                    $data[$key] = $value;
-                }
-    
-            }
-        }
-    
+        
         echo json_encode([
             "status" => true,
-            "data" => $data
+            "data" => $row ? $row["id"] : null
         ]);
-    
-    break;
+        
+        exit;
      // săp xếp
     case "reorder":
         $ids  = isset($_POST['id']) ? $_POST['id'] : array();

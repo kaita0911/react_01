@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-
+import { API_URL } from "@/config";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -33,25 +33,11 @@ function SortableRow({ item, children }) {
 
 export default function CategoryList() {
   const { module } = useParams();
+  const [componentFields, setComponentFields] = useState([]);
   const navigate = useNavigate();
 
-  const [modules, setModules] = useState([]);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const comp = modules.find((m) => m.do === module)?.id ?? null;
-
-  /* ================= MODULE ================= */
-
-  const loadModules = async () => {
-    const res = await fetch("/api/admin/component.php?act=list");
-    const data = await res.json();
-
-    if (data.status) {
-      setModules(data.data);
-    }
-  };
-
   /* ================= FLATTEN ================= */
 
   const flatten = (list, level = 0, parent = 0) => {
@@ -71,41 +57,43 @@ export default function CategoryList() {
 
     return arr;
   };
-
-  /* ================= LOAD CATEGORY ================= */
-
-  const loadCategories = async (compId) => {
-    setLoading(true);
-
-    const res = await fetch(`/api/admin/category.php?act=list&comp=${compId}`);
-    const data = await res.json();
-
-    if (data.status) {
-      setRows(flatten(data.data));
-    }
-
-    setLoading(false);
-  };
-
-  /* ================= INIT ================= */
-
   useEffect(() => {
-    const init = async () => {
-      await loadModules();
-      //await loadLanguages();
+    const loadData = async () => {
+      /* ================= Load module ================= */
+      const res_module = await fetch(
+        `/api/admin/component.php?act=comp&module=${module}`
+      );
+      const comp = await res_module.json();
+
+      if (!comp.status) return;
+
+      const compId = comp.data;
+
+      /* ================= Load fields ================= */
+
+      const res_fields = await fetch(
+        `/api/admin/component_fields.php?act=list&component=${compId}&target=category`
+      );
+      const fields = await res_fields.json();
+      if (fields.status) {
+        setComponentFields(fields.data);
+        // console.log(fields.data);
+      }
+      /* ================= Load cate ================= */
+      const res_cat = await fetch(
+        `/api/admin/category.php?act=list&comp=${compId}`
+      );
+
+      const cat = await res_cat.json();
+
+      if (cat.status) {
+        setRows(flatten(cat.data));
+      }
+
+      setLoading(false);
     };
-
-    init();
-  }, []);
-  useEffect(() => {
-    if (comp === null) return;
-
-    const load = async () => {
-      await loadCategories(comp);
-    };
-
-    load();
-  }, [comp]);
+    loadData();
+  });
 
   /* ================= DELETE ================= */
 
@@ -122,8 +110,8 @@ export default function CategoryList() {
 
     const data = await res.json();
 
-    if (data.status && comp) {
-      loadCategories(comp);
+    if (data.status) {
+      setRows((prev) => prev.filter((item) => item.id !== id));
     }
   };
 
@@ -238,7 +226,7 @@ export default function CategoryList() {
       });
 
       const result = await res.json();
-      console.log(result);
+      // console.log(result);
 
       if (result.success) {
         setRows((prev) =>
@@ -250,6 +238,10 @@ export default function CategoryList() {
     } catch {
       alert("Lỗi server");
     }
+  };
+  /* ================= RENDER fields ================= */
+  const getField = (name) => {
+    return componentFields.find((f) => f.name === name);
   };
   /* ================= RENDER ================= */
 
@@ -266,7 +258,14 @@ export default function CategoryList() {
           <thead>
             <tr>
               <th className="col-order txt-center">Thứ tự</th>
+              {getField("hinhdanhmuc") && (
+                <th className="col-order txt-center">Hình</th>
+              )}
+
               <th>Tên</th>
+              {getField("active_cate_home") && (
+                <th className="col-action txt-center">Hiện trang chủ</th>
+              )}
               <th className="col-status txt-center">Active</th>
               <th className="txt-center">Action</th>
             </tr>
@@ -282,7 +281,17 @@ export default function CategoryList() {
                   {({ attributes, listeners }) => (
                     <>
                       <td className="txt-center">{item.num}</td>
-
+                      {getField("hinhdanhmuc") && (
+                        <td className="txt-center">
+                          {item.img_thumb_vn && (
+                            <img
+                              className="img-thumbs"
+                              src={API_URL + `/${item.img_vn}`}
+                              alt={item.name}
+                            />
+                          )}
+                        </td>
+                      )}
                       <td>
                         <div
                           className="cat-name"
@@ -292,6 +301,22 @@ export default function CategoryList() {
                           {item.name}
                         </div>
                       </td>
+                      {getField("active_cate_home") && (
+                        <td className="txt-center">
+                          <label className="switch">
+                            <input
+                              type="checkbox"
+                              checked={item.home == 1}
+                              onChange={() => {
+                                console.log("home:", item.home);
+                                handleToggle(item.id, "home", item.home);
+                              }}
+                            />
+                            <span className="slider"></span>
+                          </label>
+                        </td>
+                      )}
+
                       <td className="txt-center">
                         <label className="switch">
                           <input

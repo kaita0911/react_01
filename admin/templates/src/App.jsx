@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard/Dashboard";
 import Configs from "./pages/Infos/Index";
 import Component from "./pages/Component/List";
 import ComponentEdit from "./pages/Component/Edit";
+import Field from "./pages/Component/ListFields";
 import Menu from "./pages/Menu/List";
 import Footer from "./pages/Footer/Index";
 import FooterEdit from "./pages/Footer/Edit";
@@ -47,7 +48,10 @@ function App() {
         <Route path="infos/edit/:id" element={<InfoEdit />} />
 
         <Route path="component" element={<Component />} />
-        <Route path="component/edit/:id" element={<ComponentEdit />} />
+        <Route path="component/edit/:component" element={<ComponentEdit />} />
+
+        <Route path="fields" element={<Field />} />
+        {/* <Route path="fields/edit/:id" element={<FieldEdit />} /> */}
 
         <Route path="menu" element={<Menu />} />
 

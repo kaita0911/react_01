@@ -39,7 +39,7 @@ $allowedTables = [
     'colors',
     'menu',
     'footer',
-    'language'
+    'language',
 ];
 
 $allowedColumns = [

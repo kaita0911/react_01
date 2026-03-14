@@ -61,6 +61,8 @@ export default function Sidebar({ modules }) {
             <div className="submenu">
               <Link to="/language">Ngôn ngữ</Link>
               <Link to="/component">Component</Link>
+              <Link to="/fields">Fields</Link>
+              <Link to="/component-fields">Component Fields</Link>
               <Link to="/menu">Menu trên</Link>
               <Link to="/footer">Footer</Link>
               <Link to="/infos">Cấu hình</Link>

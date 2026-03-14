@@ -19,7 +19,7 @@ $DBTYPE = 'mysql';
 $DBHOST = 'localhost';
 $DBUSER = 'root';      // user mặc định XAMPP
 $DBPASSWORD = '';       // trống (nếu bạn chưa đặt password MySQL)
-$DBNAME = 'tanphatmobile';  // nhớ tạo DB này trong phpMyAdmin
+$DBNAME = 'db_react_01';  // nhớ tạo DB này trong phpMyAdmin
 
 // ================= BOOTSTRAP =================
 require_once($config['BASE_DIR'] . '/includes/bootstrap.php');

@@ -129,7 +129,7 @@ $rows = $GLOBALS['sp']->getAll("
 SELECT 
 c.id,
 c.parent_id,
-c.active,
+c.active,c.home,
 c.num,
 cd.name
 FROM {$GLOBALS['db_sp']}.categories c
@@ -188,8 +188,8 @@ exit;
 case "add":
 
 $id     = isset($_POST['id']) ? intval($_POST['id']) : 0;
-$comp   = isset($_POST['comp']) ? intval($_POST['comp']) : 0;
-$parent = isset($_POST['parent_id']) ? intval($_POST['parent_id']) : 0;
+$comp   = isset($_POST['comp']) ? intval($_POST['comp']) : '';
+$parent = isset($_POST['parent_id']) ? intval($_POST['parent_id']) : '';
 $active = isset($_POST['active']) ? intval($_POST['active']) : 1;
 
 $languages = isset($_POST['languages']) 

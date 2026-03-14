@@ -1,19 +1,19 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { slugify } from "@/utils/slugify";
-
+import UploadImage from "@/pages/components/UploadImage";
 export default function CategoryEdit() {
   const { module, id } = useParams();
   const navigate = useNavigate();
-
+  const [fields, setFields] = useState([]);
+  const [fileMap, setFileMap] = useState({});
   const [languages, setLanguages] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
-
-  const [modules, setModules] = useState([]);
+  const [compId, setCompId] = useState(null);
+  //const [modules, setModules] = useState([]);
   const [categories, setCategories] = useState([]);
 
-  const comp = modules.find((m) => m.do === module)?.id ?? null;
-
+  //const comp = modules.find((m) => m.do === module)?.id ?? null;
   const [selectedId, setSelectedId] = useState(null);
 
   const [form, setForm] = useState({
@@ -21,85 +21,161 @@ export default function CategoryEdit() {
     active: 1,
     languages: {},
   });
-
-  /* ================= LOAD ================= */
-
-  const loadModules = async () => {
-    const res = await fetch("/api/admin/component.php?act=list");
-    const data = await res.json();
-
-    if (data.status) setModules(data.data);
+  const sidebarFields = [
+    "hinhdanhmuc",
+    "nhieuhinh",
+    "active",
+    "hot",
+    "mostview",
+    "new",
+    "price",
+    "priceold",
+  ];
+  const toggleFields = ["active", "hot", "mostview", "new"];
+  const sideFields = fields.filter((f) => sidebarFields.includes(f));
+  const fieldLabels = {
+    hinhdanhmuc: "Ảnh danh mục",
+    des: "Mô tả chi tiết",
+    short: "Mô tả ngắn",
+    active: "Active",
+    hot: "Nổi bật",
+    mostview: "Xem nhiều",
+    new: "Mới",
+    price: "Giá",
+    priceold: "Giá cũ",
   };
+  /* ================= RENDER FIELD ================= */
 
-  const loadCategories = async (compId) => {
-    const res = await fetch(`/api/admin/category.php?act=list&comp=${compId}`);
-    const data = await res.json();
-
-    if (data.status) setCategories(data.data);
-  };
-
-  const loadLanguages = async () => {
-    const res = await fetch("/api/admin/language.php?act=list");
-    const data = await res.json();
-
-    if (data.status) {
-      const activeLang = data.data.filter((l) => l.active == 1);
-
-      setLanguages(activeLang);
-
-      if (activeLang.length) {
-        setActiveTab(activeLang[0].id);
-      }
+  const renderField = (key) => {
+    if (key === "hinhdanhmuc") {
+      return (
+        <UploadImage
+          currentImage={form[key]}
+          onChange={(file) => {
+            setFileMap((p) => ({ ...p, [key]: file }));
+            handleChange(key, file.name);
+          }}
+        />
+      );
     }
+
+    if (toggleFields.includes(key)) {
+      return (
+        <label className="switch">
+          <input
+            type="checkbox"
+            checked={Number(form[key]) === 1}
+            onChange={(e) => handleChange(key, e.target.checked ? 1 : 0)}
+          />
+          <span className="slider"></span>
+        </label>
+      );
+    }
+
+    // if (priceFields.includes(key)) {
+    //   return (
+    //     <input
+    //       type="text"
+    //       className="form-control"
+    //       value={form[key] ? Number(form[key]).toLocaleString("vi-VN") : ""}
+    //       onChange={(e) => handleChange(key, e.target.value.replace(/\D/g, ""))}
+    //     />
+    //   );
+    // }
+
+    return (
+      <input
+        type="text"
+        className="form-control"
+        value={form[key] || ""}
+        onChange={(e) => handleChange(key, e.target.value)}
+      />
+    );
   };
+  /* ================= LOAD DATA ================= */
+  useEffect(() => {
+    const loadData = async () => {
+      ///Gọi thuộc tính module
+      const comp = await fetch(
+        `/api/admin/component.php?act=comp&module=${module}`
+      ).then((r) => r.json());
+      //console.log("DETAIL DATA:", comp.data.id);
+      if (comp.status) {
+        setFields(Object.keys(comp.data));
+        setCompId(comp.data.id); // ✅ lưu compId
+      }
+      // languages
+      const lang = await fetch("/api/admin/language.php?act=list").then((r) =>
+        r.json()
+      );
+
+      if (lang.status) {
+        const activeLang = lang.data.filter((l) => l.active == 1);
+        setLanguages(activeLang);
+        if (activeLang.length) setActiveTab(activeLang[0].id);
+      }
+      if (id) {
+        const res = await fetch(`/api/admin/category.php?act=detail&id=${id}`);
+        const data = await res.json();
+
+        if (!data.status) return;
+
+        const cat = data.category;
+
+        const langs = {};
+
+        data.languages.forEach((l) => {
+          langs[l.languageid] = {
+            name: l.name,
+            slug: l.slug || "",
+          };
+        });
+
+        setSelectedId(cat.parent_id);
+
+        setForm({
+          parent_id: cat.parent_id,
+          active: cat.active,
+          languages: langs,
+        });
+      }
+      ////load cate
+
+      if (comp.status) {
+        const res = await fetch(
+          `/api/admin/category.php?act=list&comp=${comp.data.id}`
+        );
+        const data = await res.json();
+
+        if (data.status) setCategories(data.data);
+      }
+    };
+    loadData();
+  }, [module, id]);
 
   /* ================= LOAD DETAIL ================= */
 
-  const loadDetail = async () => {
-    const res = await fetch(`/api/admin/category.php?act=detail&id=${id}`);
-    const data = await res.json();
+  // const loadDetail = async () => {};
 
-    if (!data.status) return;
+  // useEffect(() => {
+  //   const init = async () => {
+  //     await loadModules();
+  //     await loadLanguages();
+  //   };
 
-    const cat = data.category;
+  //   init();
+  // }, []);
 
-    const langs = {};
+  // useEffect(() => {
+  //   if (comp === null) return;
 
-    data.languages.forEach((l) => {
-      langs[l.languageid] = {
-        name: l.name,
-        slug: l.slug || "",
-      };
-    });
+  //   const load = async () => {
+  //     await loadCategories(comp);
+  //     await loadDetail();
+  //   };
 
-    setSelectedId(cat.parent_id);
-
-    setForm({
-      parent_id: cat.parent_id,
-      active: cat.active,
-      languages: langs,
-    });
-  };
-
-  useEffect(() => {
-    const init = async () => {
-      await loadModules();
-      await loadLanguages();
-    };
-
-    init();
-  }, []);
-
-  useEffect(() => {
-    if (comp === null) return;
-
-    const load = async () => {
-      await loadCategories(comp);
-      await loadDetail();
-    };
-
-    load();
-  }, [comp]);
+  //   load();
+  // }, [comp]);
 
   /* ================= FORM ================= */
 
@@ -179,17 +255,20 @@ export default function CategoryEdit() {
     });
   };
 
-  /* ================= UPDATE ================= */
+  /* ================= UPDATE va add================= */
 
   const handleSave = async () => {
     const fd = new FormData();
 
     fd.append("id", id);
-    fd.append("comp", comp);
+    fd.append("comp", compId);
     fd.append("parent_id", form.parent_id);
     fd.append("active", form.active);
     fd.append("languages", JSON.stringify(form.languages));
 
+    for (const k in fileMap) {
+      fd.append(k, fileMap[k]);
+    }
     const res = await fetch("/api/admin/category.php?act=add", {
       method: "POST",
       body: fd,
@@ -280,22 +359,17 @@ export default function CategoryEdit() {
               <div className="cat-tree">{renderTree(categories)}</div>
             </div>
 
-            <div className="form-group c-active">
-              <label>Active</label>
-
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  //checked={form.active === 1}
-                  checked={Number(form.active) === 1}
-                  onChange={(e) =>
-                    handleChange("active", e.target.checked ? 1 : 0)
-                  }
-                />
-
-                <span className="slider"></span>
-              </label>
-            </div>
+            {sideFields.map((key) => (
+              <div
+                key={key}
+                className={`form-group ${
+                  toggleFields.includes(key) ? "c-active" : ""
+                }`}
+              >
+                <label>{fieldLabels[key] || key}</label>
+                {renderField(key)}
+              </div>
+            ))}
           </div>
         </div>
       </div>

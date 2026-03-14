@@ -1,232 +1,130 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
-export default function Edit() {
+export default function ComponentFields() {
+  const { component } = useParams();
   const navigate = useNavigate();
-  const { id } = useParams();
+  const [fields, setFields] = useState([]);
+  const [selected, setSelected] = useState([]);
+  console.log("component:", component);
+  /* ================= LOAD ================= */
 
-  const [form, setForm] = useState({});
-  const [loading, setLoading] = useState(true);
+  const loadData = async () => {
+    /* all fields */
 
-  // ===== danh sách checkbox =====
-  const attrs = [
-    { name: "hinhanh", label: "Hình ảnh" },
-    { name: "short", label: "Mô tả vắn tắt" },
-    { name: "des", label: "Mô tả chi tiết" },
-    { name: "metatag", label: "Meta tag" },
-    { name: "nhieuhinh", label: "Nhiều hình" },
-    { name: "masp", label: "Mã sản phẩm" },
-    { name: "price", label: "Có giá" },
-    { name: "priceold", label: "Giá cũ" },
-    { name: "mausac", label: "Màu sắc" },
-    { name: "kichthuoc", label: "Kích thước" },
-    { name: "voucher", label: "Voucher" },
-    { name: "phiship", label: "Phí ship" },
-    { name: "new", label: "Mới" },
-    { name: "hot", label: "Nổi bật" },
-    { name: "mostview", label: "Xem nhiều" },
-    { name: "viewed", label: "Đã xem" },
-    { name: "active", label: "Show" },
-    { name: "link_out", label: "Link ngoài" },
-    { name: "attribute", label: "Thuộc tính" },
-  ];
+    const res1 = await fetch("/api/admin/fields.php?act=list");
+    const data1 = await res1.json();
 
-  const categoryAttrs = [
-    { name: "nhomcon", label: "Danh mục" },
-    { name: "danhmuchome", label: "Hiện trang chủ" },
-    { name: "hinhdanhmuc", label: "Hình danh mục" },
-    { name: "motadanhmuc", label: "Mô tả danh mục" },
-    { name: "brand", label: "Thương hiệu" },
-  ];
+    /* component fields */
 
-  const moduleAttrs = [
-    { name: "hinhmodule", label: "Hình ảnh" },
-    { name: "motamodule", label: "Mô tả chung" },
-  ];
+    const res2 = await fetch(
+      `/api/admin/component_fields.php?act=list&component=${component}`
+    );
+    const data2 = await res2.json();
 
-  const allCheckbox = [
-    ...attrs.map((a) => a.name),
-    ...categoryAttrs.map((a) => a.name),
-    ...moduleAttrs.map((a) => a.name),
-  ];
+    if (data1.status) {
+      setFields(data1.data);
+    }
 
-  // ===== load data =====
+    if (data2.status) {
+      const ids = data2.data.map((f) => f.field_id);
+      console.log(ids);
+      setSelected(ids);
+    }
+  };
+
   useEffect(() => {
-    fetch(`/api/admin/component.php?act=detail&id=${id}`)
-      .then((res) => res.json())
-      .then((result) => {
-        if (result.status) {
-          const data = { ...result.data };
+    const init = async () => {
+      await loadData();
+    };
+    init();
+  }, []);
+  /* ================= GROUP FIELD ================= */
+  const order = ["article", "category"];
+  const groupFields = () => {
+    const groups = {};
 
-          allCheckbox.forEach((name) => {
-            data[name] = Number(data[name]) || 0;
-          });
+    fields.forEach((f) => {
+      if (!groups[f.target]) {
+        groups[f.target] = [];
+      }
 
-          setForm(data);
-        }
-
-        setLoading(false);
-      });
-  }, [id]);
-
-  // ===== change input =====
-  const handleChange = (name, value) => {
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  // ===== checkbox =====
-  const handleCheckbox = (name) => {
-    setForm((prev) => ({
-      ...prev,
-      [name]: prev[name] === 1 ? 0 : 1,
-    }));
-  };
-
-  // ===== submit =====
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const fd = new FormData();
-    fd.append("id", id);
-
-    Object.keys(form).forEach((k) => {
-      fd.append(k, form[k]);
+      groups[f.target].push(f);
     });
 
-    const res = await fetch("/api/admin/component.php?act=update", {
+    return groups;
+  };
+
+  const fieldGroups = groupFields();
+
+  /* ================= CHECK ================= */
+
+  const toggleField = (id) => {
+    if (selected.includes(id)) {
+      setSelected(selected.filter((i) => i !== id));
+    } else {
+      setSelected([...selected, id]);
+    }
+  };
+
+  /* ================= SAVE ================= */
+
+  const save = async () => {
+    const fd = new FormData();
+
+    fd.append("component", component);
+
+    selected.forEach((id) => {
+      fd.append("fields[]", id);
+    });
+
+    const res = await fetch("/api/admin/component_fields.php?act=save", {
       method: "POST",
       body: fd,
     });
 
-    const result = await res.json();
+    const data = await res.json();
 
-    console.log(result);
-
-    if (result.status) {
+    if (data.status) {
       navigate("/component");
     }
   };
-  if (loading) return <p>Loading...</p>;
+
+  /* ================= UI ================= */
 
   return (
-    <div className="component-edit">
-      <form onSubmit={handleSubmit}>
-        {/* ACTION */}
+    <div>
+      <div className="component-edit">
         <div className="action-bar">
-          <button type="submit" className="c-btn btn-save">
-            <i className="fa fa-save"></i> Lưu
-          </button>
-
-          <button
-            type="button"
-            className="c-btn btn-cancel"
-            onClick={() => navigate("/component")}
-          >
-            Quay lại
+          <button onClick={save} className="c-btn btn-save">
+            <i className="fa fa-save"></i> Save
           </button>
         </div>
+        {Object.keys(fieldGroups)
+          .sort((a, b) => order.indexOf(a) - order.indexOf(b))
+          .map((target) => (
+            <fieldset key={target}>
+              <legend>Nhóm {target}</legend>
 
-        {/* BASIC */}
-        <fieldset>
-          <legend>Thông tin cơ bản</legend>
+              <div className="box-feature">
+                {fieldGroups[target].map((f) => (
+                  <label className="feature-item" key={f.id}>
+                    <span>
+                      <small>{f.name}</small>
+                      {f.label}
+                    </span>
 
-          <div className="item">
-            <div className="title">Tiêu đề</div>
-            <input
-              className="input-text"
-              value={form.name || ""}
-              onChange={(e) => handleChange("name", e.target.value)}
-            />
-          </div>
-
-          <div className="item">
-            <div className="title">TYPE</div>
-            <input
-              className="input-text"
-              value={form.do || ""}
-              onChange={(e) => handleChange("do", e.target.value)}
-            />
-          </div>
-
-          <div className="item">
-            <div className="title">Phân trang</div>
-            <input
-              className="input-text"
-              value={form.phantrang || ""}
-              onChange={(e) => handleChange("phantrang", e.target.value)}
-            />
-          </div>
-        </fieldset>
-
-        {/* ATTR */}
-        <fieldset>
-          <legend>Thuộc tính riêng</legend>
-
-          <div className="box-feature">
-            {attrs.map((attr) => (
-              <label key={attr.name} className="feature-item">
-                <span>
-                  <small>{attr.name}</small>
-                  {attr.label}
-                </span>
-
-                <input
-                  type="checkbox"
-                  checked={form[attr.name] === 1}
-                  onChange={() => handleCheckbox(attr.name)}
-                />
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        {/* CATEGORY */}
-        <fieldset>
-          <legend>Thuộc tính DANH MỤC</legend>
-
-          <div className="box-feature">
-            {categoryAttrs.map((attr) => (
-              <label key={attr.name} className="feature-item">
-                <span>
-                  <small>{attr.name}</small>
-                  {attr.label}
-                </span>
-
-                <input
-                  type="checkbox"
-                  checked={form[attr.name] === 1}
-                  onChange={() => handleCheckbox(attr.name)}
-                />
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
-        {/* MODULE */}
-        <fieldset>
-          <legend>Thuộc tính module</legend>
-
-          <div className="box-feature">
-            {moduleAttrs.map((attr) => (
-              <label key={attr.name} className="feature-item">
-                <span>
-                  <small>{attr.name}</small>
-                  {attr.label}
-                </span>
-
-                <input
-                  type="checkbox"
-                  checked={form[attr.name] === 1}
-                  onChange={() => handleCheckbox(attr.name)}
-                />
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      </form>
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(f.id)}
+                      onChange={() => toggleField(f.id)}
+                    />
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ))}
+      </div>
+      <br />
     </div>
   );
 }
