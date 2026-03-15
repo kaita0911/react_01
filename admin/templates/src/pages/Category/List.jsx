@@ -11,6 +11,25 @@ import {
 
 import { CSS } from "@dnd-kit/utilities";
 
+/* ================= FLATTEN ================= */
+
+const flatten = (list, level = 0, parent = 0) => {
+  let arr = [];
+
+  list.forEach((item) => {
+    arr.push({
+      ...item,
+      level,
+      parent_id: parent,
+    });
+
+    if (item.children?.length) {
+      arr = arr.concat(flatten(item.children, level + 1, item.id));
+    }
+  });
+
+  return arr;
+};
 /* ================= ROW ================= */
 
 function SortableRow({ item, children }) {
@@ -33,72 +52,143 @@ function SortableRow({ item, children }) {
 
 export default function CategoryList() {
   const { module } = useParams();
-  const [componentFields, setComponentFields] = useState([]);
   const navigate = useNavigate();
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
-  /* ================= FLATTEN ================= */
+  const [fields, setFields] = useState([]);
 
-  const flatten = (list, level = 0, parent = 0) => {
-    let arr = [];
+  const [languages, setLanguages] = useState([]);
+  const [activeTab, setActiveTab] = useState(null);
 
-    list.forEach((item) => {
-      arr.push({
-        ...item,
-        level,
-        parent_id: parent,
-      });
+  const [editingId, setEditingId] = useState(null);
+  const [editValue, setEditValue] = useState("");
+  ////update name
+  const saveName = async (id) => {
+    const fd = new FormData();
 
-      if (item.children?.length) {
-        arr = arr.concat(flatten(item.children, level + 1, item.id));
-      }
+    fd.append("id", id);
+    fd.append("languageid", activeTab);
+    fd.append("name", editValue);
+
+    const res = await fetch("/api/admin/category.php?act=update_name", {
+      method: "POST",
+      body: fd,
     });
 
-    return arr;
+    const data = await res.json();
+
+    if (data.status) {
+      setRows((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                names: {
+                  ...item.names,
+                  [activeTab]: editValue,
+                },
+              }
+            : item
+        )
+      );
+    }
+
+    setEditingId(null);
   };
+  ////upload image
+  const handleImageUpload = async (id, file) => {
+    const fd = new FormData();
+
+    fd.append("id", id);
+    fd.append("image", file);
+
+    const res = await fetch("/api/admin/category.php?act=update_image", {
+      method: "POST",
+      body: fd,
+    });
+
+    const data = await res.json();
+
+    if (data.status) {
+      setRows((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, img_vn: data.image } : item
+        )
+      );
+    }
+  };
+  /////
   useEffect(() => {
     const loadData = async () => {
-      /* ================= Load module ================= */
-      const res_module = await fetch(
+      const resModule = await fetch(
         `/api/admin/component.php?act=comp&module=${module}`
       );
-      const comp = await res_module.json();
+      const comp = await resModule.json();
 
       if (!comp.status) return;
 
       const compId = comp.data;
 
-      /* ================= Load fields ================= */
+      const [fieldsRes, catRes, langRes] = await Promise.all([
+        fetch(
+          `/api/admin/component_fields.php?act=list&component=${compId}&target=category`
+        ),
+        fetch(`/api/admin/category.php?act=list&comp=${compId}`),
+        fetch(`/api/admin/language.php?act=list`),
+      ]);
 
-      const res_fields = await fetch(
-        `/api/admin/component_fields.php?act=list&component=${compId}&target=category`
-      );
-      const fields = await res_fields.json();
-      if (fields.status) {
-        setComponentFields(fields.data);
-        // console.log(fields.data);
+      const fieldData = await fieldsRes.json();
+      const catData = await catRes.json();
+      const langData = await langRes.json();
+
+      if (fieldData.status) setFields(fieldData.data);
+      if (catData.status) setRows(flatten(catData.data));
+      if (langData.status) {
+        const activeLang = langData.data.filter((l) => l.active == 1);
+        setLanguages(activeLang);
+        if (activeLang.length) setActiveTab(activeLang[0].id);
       }
-      /* ================= Load cate ================= */
-      const res_cat = await fetch(
-        `/api/admin/category.php?act=list&comp=${compId}`
-      );
-
-      const cat = await res_cat.json();
-
-      if (cat.status) {
-        setRows(flatten(cat.data));
-      }
-
       setLoading(false);
     };
-    loadData();
-  });
 
+    loadData();
+  }, [module]);
+  /* ================= RENDER fields ================= */
+  const getField = (name) => fields.some((f) => f.name === name);
+
+  const rebuildTree = (list) =>
+    list.map((item, index) => {
+      let parent_id = 0;
+
+      for (let i = index - 1; i >= 0; i--) {
+        if (list[i].level < item.level) {
+          parent_id = list[i].id;
+          break;
+        }
+      }
+
+      return { ...item, parent_id, num: index + 1 };
+    });
+
+  const saveTree = async (list) => {
+    const fd = new FormData();
+
+    list.forEach((r) => {
+      fd.append("id[]", r.id);
+      fd.append("parent_id[]", r.parent_id);
+      fd.append("num[]", r.num);
+    });
+
+    await fetch("/api/admin/category.php?act=reorder_tree", {
+      method: "POST",
+      body: fd,
+    });
+  };
   /* ================= DELETE ================= */
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Xóa danh mục này?")) return;
+    if (!window.confirm("Xóa danh mục?")) return;
 
     const fd = new FormData();
     fd.append("id", id);
@@ -111,46 +201,8 @@ export default function CategoryList() {
     const data = await res.json();
 
     if (data.status) {
-      setRows((prev) => prev.filter((item) => item.id !== id));
+      setRows((prev) => prev.filter((r) => r.id !== id));
     }
-  };
-
-  /* ================= TREE REBUILD ================= */
-
-  const rebuildTree = (list) => {
-    return list.map((item, index) => {
-      let parent_id = 0;
-
-      for (let i = index - 1; i >= 0; i--) {
-        if (list[i].level < item.level) {
-          parent_id = list[i].id;
-          break;
-        }
-      }
-
-      return {
-        ...item,
-        parent_id,
-        num: index + 1,
-      };
-    });
-  };
-
-  /* ================= SAVE ================= */
-
-  const saveTree = async (list) => {
-    const fd = new FormData();
-
-    list.forEach((row) => {
-      fd.append("id[]", row.id);
-      fd.append("parent_id[]", row.parent_id);
-      fd.append("num[]", row.num);
-    });
-
-    await fetch("/api/admin/category.php?act=reorder_tree", {
-      method: "POST",
-      body: fd,
-    });
   };
 
   /* ================= DRAG ================= */
@@ -206,9 +258,7 @@ export default function CategoryList() {
 
   /* ================= LOADING ================= */
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <div>Loading...</div>;
   // ================= TOGGLE ACTIVE =================
   const handleToggle = async (id, column, currentValue) => {
     const newValue = currentValue == 1 ? 0 : 1;
@@ -239,20 +289,29 @@ export default function CategoryList() {
       alert("Lỗi server");
     }
   };
-  /* ================= RENDER fields ================= */
-  const getField = (name) => {
-    return componentFields.find((f) => f.name === name);
-  };
+
   /* ================= RENDER ================= */
 
   return (
-    <main>
+    <main className="page-editor">
       <div className="action-bar">
         <Link to={`/${module}/category/create`} className="c-btn btn-add">
           <i className="fa-solid fa-circle-plus"></i> Thêm mới
         </Link>
       </div>
-
+      {languages.length > 1 && (
+        <div className="lang-tabs-header list">
+          {languages.map((lang) => (
+            <button
+              key={lang.id}
+              className={`lang-btn ${activeTab === lang.id ? "active" : ""}`}
+              onClick={() => setActiveTab(lang.id)}
+            >
+              {lang.name}
+            </button>
+          ))}
+        </div>
+      )}
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <table className="admin-table">
           <thead>
@@ -282,14 +341,42 @@ export default function CategoryList() {
                     <>
                       <td className="txt-center">{item.num}</td>
                       {getField("hinhdanhmuc") && (
+                        // <td className="txt-center">
+                        //   {item.img_vn && (
+                        //     <img
+                        //       className="img-thumbs"
+                        //       src={API_URL + `${item.img_vn}`}
+                        //       alt={item.name}
+                        //     />
+                        //   )}
+                        // </td>
                         <td className="txt-center">
-                          {item.img_thumb_vn && (
-                            <img
-                              className="img-thumbs"
-                              src={API_URL + `/${item.img_vn}`}
-                              alt={item.name}
+                          <label className="img-edit">
+                            <input
+                              type="file"
+                              hidden
+                              onChange={(e) =>
+                                handleImageUpload(item.id, e.target.files[0])
+                              }
                             />
-                          )}
+
+                            {item.img_vn ? (
+                              <>
+                                <img
+                                  className="img-thumbs"
+                                  src={API_URL + item.img_vn}
+                                  alt=""
+                                />
+                                <div className="img-overlay">
+                                  <i className="fa-solid fa-camera"></i>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="img-placeholder">
+                                <i className="fa-solid fa-camera"></i>
+                              </div>
+                            )}
+                          </label>
                         </td>
                       )}
                       <td>
@@ -298,7 +385,28 @@ export default function CategoryList() {
                           style={{ paddingLeft: item.level * 20 }}
                         >
                           {"-- ".repeat(item.level)}
-                          {item.name}
+                          {editingId === item.id ? (
+                            <input
+                              className="inline-input"
+                              value={editValue}
+                              autoFocus
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onBlur={() => saveName(item.id)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveName(item.id);
+                              }}
+                            />
+                          ) : (
+                            <span
+                              className="inline-text"
+                              onClick={() => {
+                                setEditingId(item.id);
+                                setEditValue(item.names?.[activeTab] || "");
+                              }}
+                            >
+                              {item.names?.[activeTab] || "-"}
+                            </span>
+                          )}
                         </div>
                       </td>
                       {getField("active_cate_home") && (

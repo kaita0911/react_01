@@ -516,10 +516,39 @@
                 border-bottom: 1px solid #f1f5f9;
                 color: #374151;
 
+                .img-edit {
+                    position: relative;
+                    display: inline-block;
+                    cursor: pointer;
+                }
+
                 .img-thumbs {
-                    width: 50px;
-                    height: 50px;
-                    object-fit: scale-down;
+                    width: 42px;
+                    height: 42px;
+                    object-fit: cover;
+                    border-radius: 6px;
+                    border: 1px solid #eee;
+                }
+
+                .img-overlay {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, .45);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 6px;
+                    opacity: 0;
+                    transition: all .2s ease;
+                    color: #fff;
+                    font-size: 16px;
+                }
+
+                .img-edit:hover .img-overlay {
+                    opacity: 1;
                 }
             }
         }
@@ -881,32 +910,37 @@
 
 ////
 .page-editor {
+    .lang-tabs-header {
+        margin-bottom: 1px;
+
+        &.list {
+            margin-bottom: 10px;
+        }
+
+        .lang-btn {
+            padding: 8px 18px;
+            border: none;
+            font-weight: normal;
+            background: #ddd;
+            border-radius: 2px;
+            margin-right: 8px;
+            cursor: pointer;
+            outline: none !important;
+
+            &.active {
+                background: #1677ff;
+                color: white;
+            }
+        }
+
+    }
 
     .editor-layout {
         display: grid;
         grid-template-columns: 1fr 320px;
         gap: 24px;
 
-        .lang-tabs-header {
-            margin-bottom: 1px;
 
-            .lang-btn {
-                padding: 8px 18px;
-                border: none;
-                font-weight: normal;
-                background: #ddd;
-                border-radius: 2px;
-                margin-right: 8px;
-                cursor: pointer;
-                outline: none !important;
-
-                &.active {
-                    background: #1677ff;
-                    color: white;
-                }
-            }
-
-        }
 
         .editor-card {
             background: white;
@@ -1143,6 +1177,12 @@
                     padding: 10px 12px;
                     border-radius: 8px;
                     border: 1px solid #d1d5db;
+
+                    &:focus {
+                        outline: none;
+                        border-color: #3b82f6;
+
+                    }
                 }
 
                 .form-input {
@@ -1156,9 +1196,10 @@
                     &:focus {
                         outline: none;
                         border-color: #3b82f6;
-                        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+
                     }
                 }
+
 
             }
 
@@ -1168,11 +1209,26 @@
             margin-top: 10px;
         }
 
-        // .editor-sidebar {
-        //     position: sticky;
-        //     top: 20px;
-        //     height: fit-content;
-        // }
+        .tag-wrapper {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+
+            .tag {
+                background: #eef2ff;
+                padding: 3px 8px;
+                border-radius: 4px;
+                display: flex;
+                gap: 4px;
+                align-items: center;
+
+                button {
+                    padding: 3px 5px;
+                }
+            }
+        }
+
+
     }
 }
 
@@ -1397,22 +1453,30 @@
     gap: 8px;
     text-transform: capitalize;
 
-    // .tree-line {
-    //     width: 14px;
-    //     height: 1px;
-    //     background: #aaa;
-    //     position: relative;
+    .inline-text {
+        cursor: pointer;
+        padding: 2px 4px;
+        border-radius: 4px;
 
-    //     &::before {
-    //         content: "";
-    //         position: absolute;
-    //         left: -8px;
-    //         top: -6px;
-    //         width: 1px;
-    //         height: 14px;
-    //         background: #aaa;
-    //     }
-    // }
+        &:hover {
+            background: #f3f3f3;
+        }
+
+    }
+
+    .inline-input {
+        width: 100%;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 4px 6px;
+        font-size: 13px;
+
+        &:focus {
+            outline: none !important;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+        }
+    }
 
 }
 

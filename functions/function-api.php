@@ -1,4 +1,5 @@
 <?php
+
 if (!function_exists('generate_toc')) {
 
     function generate_toc($content)
@@ -21,7 +22,9 @@ if (!function_exists('generate_toc')) {
                 // ===== tạo slug =====
                 $id = removeVietnameseTones($title);
 
-                if ($id === '') $id = 'heading';
+                if ($id === '') {
+                    $id = 'heading';
+                }
 
                 // Nếu bắt đầu bằng số
                 if (preg_match('/^[0-9]/', $id)) {
@@ -73,9 +76,11 @@ function removeVietnameseTones($str)
 
     return $str;
 }
-function vn_to_slug($str)
+function slugify($str)
 {
-    if (!$str) return '';
+    if (!$str) {
+        return '';
+    }
 
     // Đưa về chữ thường
     $str = mb_strtolower($str, 'UTF-8');
@@ -238,4 +243,3 @@ function vn_to_slug($str)
 
     return $str;
 }
-?>

@@ -1,78 +1,72 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { slugify } from "@/utils/slugify";
-
+import UploadImage from "@/pages/components/UploadImage";
+import Editor from "@/utils/Ckeditor";
+import MetaKeywords from "@/utils/MetaKeywords";
 export default function CategoryCreate() {
   const { module } = useParams();
   const navigate = useNavigate();
 
+  const [compId, setCompId] = useState(null);
+  const [fields, setFields] = useState([]);
   const [languages, setLanguages] = useState([]);
-  const [activeTab, setActiveTab] = useState(null);
-
-  const [modules, setModules] = useState([]);
   const [categories, setCategories] = useState([]);
-
-  const comp = modules.find((m) => m.do === module)?.id ?? null;
+  const [activeTab, setActiveTab] = useState(null);
+  const [fileMap, setFileMap] = useState({});
 
   const [form, setForm] = useState({
     parent_id: 0,
     active: 1,
+    home: 1,
     languages: {},
   });
 
-  const [selectedId, setSelectedId] = useState(null);
-
-  /* ================= LOAD ================= */
-
-  const loadModules = async () => {
-    const res = await fetch("/api/admin/component.php?act=list");
-    const data = await res.json();
-
-    if (data.status) setModules(data.data);
-  };
-
-  const loadCategories = async (compId) => {
-    const res = await fetch(`/api/admin/category.php?act=list&comp=${compId}`);
-    const data = await res.json();
-
-    if (data.status) setCategories(data.data);
-  };
-
-  const loadLanguages = async () => {
-    const res = await fetch("/api/admin/language.php?act=list");
-    const data = await res.json();
-
-    if (data.status) {
-      const activeLang = data.data.filter((l) => l.active == 1);
-
-      setLanguages(activeLang);
-
-      if (activeLang.length) {
-        setActiveTab(activeLang[0].id);
-      }
-    }
-  };
+  /* ================= LOAD DATA ================= */
 
   useEffect(() => {
     const init = async () => {
-      await loadModules();
-      await loadLanguages();
+      const [compRes, langRes] = await Promise.all([
+        fetch(`/api/admin/component.php?act=comp&module=${module}`),
+        fetch(`/api/admin/language.php?act=list`),
+      ]);
+      const compData = await compRes.json();
+      const langData = await langRes.json();
+
+      // const compRes = await fetch(
+      //   `/api/admin/component.php?act=comp&module=${module}`
+      // );
+      // const compData = await compRes.json();
+
+      if (!compData.status) return;
+      const comp = compData.data;
+      setCompId(comp);
+
+      const [fieldRes, cateRes] = await Promise.all([
+        fetch(
+          `/api/admin/component_fields.php?act=list&component=${comp}&target=category`
+        ),
+        fetch(`/api/admin/category.php?act=list&comp=${comp}`),
+      ]);
+
+      const fieldData = await fieldRes.json();
+      const cateData = await cateRes.json();
+
+      if (fieldData.status) setFields(fieldData.data);
+
+      if (langData.status) {
+        const activeLang = langData.data.filter((l) => l.active == 1);
+        setLanguages(activeLang);
+        if (activeLang.length) setActiveTab(activeLang[0].id);
+      }
+
+      if (cateData.status) setCategories(cateData.data);
     };
 
     init();
-  }, []);
+  }, [module]);
 
-  useEffect(() => {
-    if (comp === null) return;
-
-    const load = async () => {
-      await loadCategories(comp);
-    };
-
-    load();
-  }, [comp]);
   /* ================= FORM ================= */
-
   const handleLangChange = (langId, field, value) => {
     setForm((p) => ({
       ...p,
@@ -86,70 +80,54 @@ export default function CategoryCreate() {
     }));
   };
 
-  const handleChange = (key, value) => {
-    setForm((p) => ({ ...p, [key]: value }));
-  };
-
-  /* ================= SELECT CATEGORY ================= */
-
   const handleSelect = (id) => {
-    setSelectedId(id);
-
-    setForm((p) => ({
-      ...p,
-      parent_id: id,
-    }));
+    setForm((p) => ({ ...p, parent_id: id }));
   };
 
   /* ================= TREE ================= */
-  const findParentIds = (id, list, parents = []) => {
-    for (let item of list) {
-      if (item.id === id) return parents;
+  const isParentOfSelected = (item) => {
+    if (form.parent_id === item.id) return true;
 
-      if (item.children?.length) {
-        const found = findParentIds(id, item.children, [...parents, item.id]);
-        if (found) return found;
+    const checkChildren = (children) => {
+      for (let c of children || []) {
+        if (c.id === form.parent_id) return true;
+        if (checkChildren(c.children)) return true;
       }
-    }
+      return false;
+    };
 
-    return [];
+    return checkChildren(item.children);
   };
-  const renderTree = (list, level = 0) => {
-    const parents = findParentIds(selectedId, categories);
+  const renderTree = (list, level = 0) =>
+    list.map((item) => (
+      <div key={item.id} className="cat-item">
+        <label className="cat-label">
+          <input
+            type="checkbox"
+            checked={isParentOfSelected(item)}
+            onChange={() => handleSelect(item.id)}
+          />
 
-    return list.map((item) => {
-      const checked = selectedId === item.id || parents.includes(item.id);
+          <span className="cat-name">
+            {"-- ".repeat(level)}
+            {item.names?.[activeTab] || "-"}
+          </span>
+        </label>
 
-      return (
-        <div key={item.id} className="cat-item">
-          <label className="cat-label">
-            <input
-              type="checkbox"
-              checked={checked}
-              onChange={() => handleSelect(item.id)}
-            />
-
-            <span className="cat-name">
-              {"-- ".repeat(level)}
-              {item.name}
-            </span>
-          </label>
-
-          {item.children?.length > 0 && renderTree(item.children, level + 1)}
-        </div>
-      );
-    });
-  };
+        {item.children?.length > 0 && renderTree(item.children, level + 1)}
+      </div>
+    ));
 
   /* ================= CREATE ================= */
 
   const handleCreate = async () => {
     const fd = new FormData();
 
-    fd.append("comp", comp);
+    fd.append("comp", compId);
     fd.append("parent_id", form.parent_id);
-    fd.append("active", form.active);
     fd.append("languages", JSON.stringify(form.languages));
+
+    Object.keys(fileMap).forEach((k) => fd.append(k, fileMap[k]));
 
     const res = await fetch("/api/admin/category.php?act=add", {
       method: "POST",
@@ -158,12 +136,17 @@ export default function CategoryCreate() {
 
     const result = await res.json();
 
-    if (result.status) {
-      navigate(`/${module}/category`);
-    } else {
-      alert("Lỗi thêm danh mục");
-    }
+    if (result.status) navigate(`/${module}/category`);
+    else alert("Lỗi thêm danh mục");
   };
+
+  /* ================= HELP ================= */
+
+  const fieldMap = useMemo(() => {
+    const map = {};
+    fields.forEach((f) => (map[f.name] = f));
+    return map;
+  }, [fields]);
 
   /* ================= RENDER ================= */
 
@@ -200,7 +183,7 @@ export default function CategoryCreate() {
           )}
 
           {languages
-            .filter((lang) => languages.length === 1 || activeTab === lang.id)
+            .filter((l) => languages.length === 1 || activeTab === l.id)
             .map((lang) => {
               const langData = form.languages?.[lang.id] || {};
 
@@ -210,20 +193,45 @@ export default function CategoryCreate() {
                     <label>Tên</label>
 
                     <input
-                      type="text"
                       value={langData.name || ""}
                       onChange={(e) => {
                         const v = e.target.value;
-
                         handleLangChange(lang.id, "name", v);
                         handleLangChange(lang.id, "slug", slugify(v));
                       }}
                     />
                   </div>
-
                   <div className="form-group">
                     <label>Slug</label>
                     <input value={langData.slug || ""} readOnly />
+                  </div>
+                  {fieldMap.content && (
+                    <div className="form-group">
+                      <label>Mô tả chi tiết</label>
+                      <Editor
+                        value={langData.content || ""}
+                        onChange={(v) =>
+                          handleLangChange(lang.id, "content", v)
+                        }
+                      />
+                    </div>
+                  )}
+                  <div className="form-group">
+                    <label>Meta tags</label>
+                    <MetaKeywords
+                      value={langData.keyword || ""}
+                      onChange={(v) => handleLangChange(lang.id, "keyword", v)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Meta description</label>
+                    <textarea
+                      className="form-textarea"
+                      value={langData.des || ""}
+                      onChange={(e) =>
+                        handleLangChange(lang.id, "des", e.target.value)
+                      }
+                    />
                   </div>
                 </div>
               );
@@ -234,26 +242,20 @@ export default function CategoryCreate() {
 
         <div className="editor-sidebar">
           <div className="editor-card">
-            <div className="form-group">
-              <label>Danh mục cha</label>
-
-              <div className="cat-tree">{renderTree(categories)}</div>
-            </div>
-
-            <div className="form-group c-active">
-              <label>Active</label>
-
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={form.active === 1}
-                  onChange={(e) =>
-                    handleChange("active", e.target.checked ? 1 : 0)
+            {fieldMap.hinhdanhmuc && (
+              <div className="form-group">
+                <UploadImage
+                  currentImage={form.img_vn}
+                  onChange={(file) =>
+                    setFileMap((p) => ({ ...p, hinhdanhmuc: file }))
                   }
                 />
+              </div>
+            )}
 
-                <span className="slider"></span>
-              </label>
+            <div className="form-group">
+              <label>Danh mục cha</label>
+              <div className="cat-tree">{renderTree(categories)}</div>
             </div>
           </div>
         </div>
