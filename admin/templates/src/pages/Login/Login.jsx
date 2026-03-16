@@ -24,9 +24,9 @@ export default function Login() {
     });
 
     const data = await res.json();
-    console.log(data);
     if (data.status) {
       localStorage.setItem("admin_token", "true");
+      localStorage.setItem("admin_name", data.data.username); // ⭐ THÊM DÒNG NÀY
       navigate("/");
     } else {
       setError("Sai tài khoản hoặc mật khẩu !");

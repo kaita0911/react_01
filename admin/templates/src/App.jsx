@@ -14,6 +14,7 @@ import FooterEdit from "./pages/Footer/Edit";
 import InfoEdit from "./pages/Infos/Edit";
 import Language from "./pages/Languages/List";
 import Contact from "./pages/Contact/List";
+import Cart from "./pages/Cart/List";
 import AdminLayout from "./pages/layouts/AdminLayout";
 import DynamicModule from "./pages/Modules/DynamicModule";
 import Category from "./pages/Category/List";
@@ -48,22 +49,17 @@ function App() {
         element={isLogin ? <AdminLayout /> : <Navigate to="/login" replace />}
       >
         <Route path="/dashboard" element={<Dashboard />} />
-
         <Route path="/infos" element={<Configs />} />
         <Route path="/infos/edit/:id" element={<InfoEdit />} />
-
         <Route path="/component" element={<Component />} />
         <Route path="/component/edit/:component" element={<ComponentEdit />} />
-
         <Route path="/fields" element={<Field />} />
-
         <Route path="/menu" element={<Menu />} />
-
         <Route path="/footer" element={<Footer />} />
         <Route path="/footer/edit/:id" element={<FooterEdit />} />
-
         <Route path="/language" element={<Language />} />
-        <Route path="/contact" element={<Contact />} />
+        <Route path="/contact" element={<Contact />} />{" "}
+        <Route path="/cart" element={<Cart />} />
         {/* ===== DYNAMIC MODULE ===== */}
         <Route path="/:module/category" element={<Category />} />
         <Route path="/:module/category/create" element={<CategoryCreate />} />

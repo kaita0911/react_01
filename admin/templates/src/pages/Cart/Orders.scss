@@ -1,0 +1,120 @@
+.orders-page {
+    padding: 20px;
+}
+
+.filters {
+    margin-bottom: 15px;
+    display: flex;
+    gap: 10px;
+}
+
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.orders-table th,
+.orders-table td {
+    border: 1px solid #eee;
+    padding: 10px;
+}
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: white;
+    font-size: 12px;
+}
+
+.pending {
+    background: #faad14;
+}
+
+.shipping {
+    background: #1677ff;
+}
+
+.done {
+    background: #52c41a;
+}
+
+.actions button {
+    margin-right: 5px;
+    padding: 5px 8px;
+    cursor: pointer;
+}
+
+.actions .danger {
+    background: #ff4d4f;
+    color: white;
+    border: none;
+}
+
+/* ===== ORDER INFO ===== */
+
+.order-info {
+    background: #f8f9fb;
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 20px;
+
+    .info-item {
+        margin-bottom: 6px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+
+        span {
+            font-size: 13px;
+            color: #666;
+            display: block;
+        }
+
+        b {
+            font-size: 14px;
+            color: #222;
+        }
+    }
+}
+
+/* ===== TABLE ITEMS ===== */
+
+.orders-detail {
+    width: 100%;
+    border-collapse: collapse;
+
+    thead {
+        background: #f5f6f8;
+
+        th {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+    }
+
+    tbody {
+        tr:hover {
+            background: #fafafa;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+    }
+
+    tfoot {
+        td {
+            padding: 12px;
+            font-weight: 600;
+            border-top: 2px solid #eee;
+        }
+
+        .total {
+            color: #e53935;
+            font-size: 16px;
+        }
+    }
+}

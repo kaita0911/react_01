@@ -49,6 +49,7 @@ export default function Sidebar({ modules }) {
             </div>
           );
         })}
+        <Link to="/cart">Đơn hàng</Link>
         <Link to="/contact">Liên hệ</Link>
         {/* THÔNG TIN WEBSITE */}
         <div className="menu-parent">

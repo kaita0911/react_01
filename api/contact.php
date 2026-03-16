@@ -1,4 +1,5 @@
 <?php
+
 ob_start();   // ⭐ thêm dòng này
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -43,7 +44,7 @@ $emails = [
     'admin' => 'kaita0911@gmail.com'
 ];
 
-$sent = sendContactEmail($contactData, $emails);
+//$sent = sendContactEmail($contactData, $emails);
 
 // Trả JSON cho React
 echo json_encode([

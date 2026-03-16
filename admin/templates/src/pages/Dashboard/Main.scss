@@ -227,12 +227,61 @@
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
 
     .badge-contact {
-        background: red;
+        background: #2563eb;
         color: white;
         font-size: 12px;
-        padding: 2px 6px;
-        border-radius: 10px;
-        margin-left: 6px;
+        padding: 5px 8px;
+        border-radius: 3px;
+        position: relative;
+
+        @keyframes bellShake {
+            0% {
+                transform: rotate(0);
+            }
+
+            20% {
+                transform: rotate(-15deg);
+            }
+
+            40% {
+                transform: rotate(10deg);
+            }
+
+            60% {
+                transform: rotate(-10deg);
+            }
+
+            80% {
+                transform: rotate(5deg);
+            }
+
+            100% {
+                transform: rotate(0);
+            }
+        }
+
+        .fa-bell {
+            animation: bellShake 1s infinite;
+            position: absolute;
+            right: -6px;
+            top: -6px;
+            color: red;
+
+
+        }
+
+        span {
+            background: #fff;
+            color: #2563eb;
+            margin-left: 8px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: inline-flex;
+            font-size: 11px;
+            align-items: center;
+            justify-content: center;
+        }
     }
 
     .header-left h3 {
@@ -657,10 +706,11 @@
         width: 120px;
     }
 
-    .check-del {
-        width: 25px;
-        height: 18px;
-    }
+}
+
+.check-del {
+    width: 25px;
+    height: 18px;
 }
 
 .txt-center {
@@ -683,13 +733,16 @@
         background: white;
         padding: 22px;
         border-radius: 12px;
-        width: 360px;
+        min-width: 360px;
         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
         animation: modalZoom 0.25s ease;
         display: flex;
         flex-direction: column;
         gap: 10px;
 
+        &.orders {
+            min-width: 800px;
+        }
 
         input,
         select {

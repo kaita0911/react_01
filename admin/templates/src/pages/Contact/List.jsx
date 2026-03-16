@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import Pagination from "@/pages/components/Pagination";
+import "./Contact.scss";
 export default function Contact() {
   const [data, setData] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  // const [contacts, setContacts] = useState([]);
+  const [tab, setTab] = useState("all");
   const limit = 25;
   const totalPage = Math.ceil(total / limit);
   const [modal, setModal] = useState({
@@ -28,39 +31,13 @@ export default function Contact() {
       .catch(() => setModal({ type: "error", payload: "Lỗi tải dữ liệu" }));
   }, [page, limit]);
 
-  /* ================= DELETE 1 ================= */
-
-  const handleDelete = (id) => {
-    setModal({ type: "confirmDelete", payload: id });
-  };
-
-  const confirmDelete = async () => {
-    const id = modal.payload;
-
-    const fd = new FormData();
-    fd.append("id", id);
-
-    try {
-      const res = await fetch("/api/admin/contact.php?act=delete", {
-        method: "POST",
-        body: fd,
-      });
-
-      const result = await res.json();
-
-      if (result.status) {
-        setData((prev) => prev.filter((i) => i.id !== id));
-        closeModal();
-      } else {
-        setModal({ type: "error", payload: result.message });
-      }
-    } catch {
-      setModal({ type: "error", payload: "Lỗi server" });
-    }
-  };
-
   /* ================= DELETE MULTIPLE ================= */
 
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
   const handleDeleteMultiple = () => {
     setModal({ type: "confirmDeleteMulti" });
   };
@@ -89,22 +66,6 @@ export default function Contact() {
     }
   };
 
-  /* ================= SELECT ================= */
-
-  const toggleSelect = (id) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
-  };
-
-  const toggleSelectAll = (e) => {
-    if (e.target.checked) {
-      setSelectedIds(data.map((i) => i.id));
-    } else {
-      setSelectedIds([]);
-    }
-  };
-
   /* ================= VIEW ================= */
 
   const handleView = async (item) => {
@@ -122,7 +83,23 @@ export default function Contact() {
 
     setModal({ type: "view", payload: item });
   };
+  const formatDate = (date) => {
+    const d = new Date(date);
 
+    const time = d.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const day = d.toLocaleDateString("vi-VN");
+
+    return `${time} • ${day}`;
+  };
+  const totalAll = data.length;
+  const totalUnread = data.filter((i) => Number(i.is_read) === 0).length;
+
+  const filtered =
+    tab === "unread" ? data.filter((i) => Number(i.is_read) === 0) : data;
   /* ================= UI ================= */
 
   return (
@@ -136,67 +113,56 @@ export default function Contact() {
           <i className="fa-solid fa-trash-can"></i> Xoá đã chọn
         </button>
       </div>
+      <div className="contact-tabs">
+        <button
+          className={tab === "all" ? "active" : ""}
+          onClick={() => setTab("all")}
+        >
+          Tất cả ({totalAll})
+        </button>
 
-      <table className="admin-table">
-        <thead>
-          <tr>
-            <th className="col-id txt-center">
+        <button
+          className={tab === "unread" ? "active" : ""}
+          onClick={() => setTab("unread")}
+        >
+          Chưa đọc ({totalUnread})
+        </button>
+      </div>
+      <div className="contact-list">
+        {filtered.map((item) => (
+          <div
+            key={item.id}
+            className={`contact-row ${
+              Number(item.is_read) === 0 ? "unread" : ""
+            }`}
+            onClick={() => handleView(item)}
+          >
+            <div className="contact-left">
               <input
                 className="check-del"
                 type="checkbox"
-                onChange={toggleSelectAll}
+                checked={selectedIds.includes(item.id)}
+                onChange={(e) => {
+                  e.stopPropagation(); // chặn click lan lên
+                  toggleSelect(item.id);
+                }}
+                onClick={(e) => e.stopPropagation()}
               />
-            </th>
 
-            <th className="col-order txt-center">Thứ tự</th>
-            <th>Tên</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th className="txt-center">Action</th>
-          </tr>
-        </thead>
+              {Number(item.is_read) === 0 && <span className="dot"></span>}
+            </div>
 
-        <tbody>
-          {data.map((item, index) => (
-            <tr
-              key={item.id}
-              className={Number(item.is_read) === 0 ? "contact-unread" : ""}
-            >
-              <td className="txt-center">
-                <input
-                  className="check-del"
-                  type="checkbox"
-                  checked={selectedIds.includes(item.id)}
-                  onChange={() => toggleSelect(item.id)}
-                />
-              </td>
+            <div className="contact-info">
+              <div className="contact-name">{item.name}</div>
+              <div className="contact-email">{item.email}</div>
+            </div>
 
-              <td className="txt-center">{index + 1}</td>
-              <td>{item.name}</td>
-              <td>{item.email}</td>
-              <td>{item.phone}</td>
+            <div className="contact-message">{item.message}</div>
 
-              <td className="col-actions txt-center">
-                <div className="btn-actions">
-                  <button
-                    className="btn-view act"
-                    onClick={() => handleView(item)}
-                  >
-                    <i className="fa-solid fa-eye"></i>
-                  </button>
-
-                  <button
-                    className="btn-delete act"
-                    onClick={() => handleDelete(item.id)}
-                  >
-                    <i className="fa-solid fa-trash-can"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+            <div className="contact-date">{formatDate(item.dated)}</div>
+          </div>
+        ))}
+      </div>
       <Pagination page={page} totalPage={totalPage} setPage={setPage} />
       {/* ================= MODAL ================= */}
 
@@ -205,51 +171,37 @@ export default function Contact() {
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             {/* VIEW CONTACT */}
             {modal.type === "view" && (
-              <>
-                <h3>Chi tiết liên hệ</h3>
-
-                <p>
-                  <b>Tên:</b> {modal.payload.name}
-                </p>
-
-                <p>
-                  <b>Email:</b> {modal.payload.email}
-                </p>
-
-                <p>
-                  <b>Phone:</b> {modal.payload.phone}
-                </p>
-
-                <p>
-                  <b>Nội dung:</b>
-                </p>
-
-                <div className="contact-message">{modal.payload.message}</div>
-
-                <div className="modal-actions">
-                  <button className="btn-cancel" onClick={closeModal}>
-                    Đóng
-                  </button>
+              <div className="contact-view">
+                <button className="modal-close" onClick={closeModal}>
+                  <i className="fa-solid fa-xmark"></i>
+                </button>
+                <div className="contact-header">
+                  <div className="contact-header-ttl">Chi tiết liên hệ</div>
                 </div>
-              </>
-            )}
+                <div className="contact-info-grid">
+                  <div className="info-item">
+                    <span className="label">Tên</span>
+                    <span className="value">{modal.payload.name}</span>
+                  </div>
 
-            {/* DELETE */}
-            {modal.type === "confirmDelete" && (
-              <>
-                <h3>Xác nhận xoá</h3>
-                <p>Bạn có chắc muốn xoá contact này?</p>
+                  <div className="info-item">
+                    <span className="label">Email</span>
+                    <span className="value">{modal.payload.email}</span>
+                  </div>
 
-                <div className="modal-actions">
-                  <button className="btn-confirm" onClick={confirmDelete}>
-                    <i className="fa-solid fa-trash"></i> Xoá
-                  </button>
-
-                  <button className="btn-cancel" onClick={closeModal}>
-                    Huỷ
-                  </button>
+                  <div className="info-item">
+                    <span className="label">Phone</span>
+                    <span className="value">{modal.payload.phone}</span>
+                  </div>
                 </div>
-              </>
+                <div className="contact-message-box">
+                  <div className="message-title">Nội dung liên hệ</div>
+                  <div className="message-content">{modal.payload.message}</div>
+                </div>
+                <span className="contact-time">
+                  {formatDate(modal.payload.dated)}
+                </span>
+              </div>
             )}
 
             {/* DELETE MULTI */}

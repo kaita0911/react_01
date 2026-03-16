@@ -6,9 +6,21 @@ import ChangePasswordModal from "../Login/ChangePasswordModal";
 export default function Header() {
   const [newContact, setNewContact] = useState(0);
   const navigate = useNavigate();
-  const userName = localStorage.getItem("admin_name") || "Admin";
-  const [showChange, setShowChange] = useState(false);
 
+  const [showChange, setShowChange] = useState(false);
+  const [userName, setUserName] = useState(
+    localStorage.getItem("admin_name") || "Admin"
+  );
+  useEffect(() => {
+    const updateName = () => {
+      const name = localStorage.getItem("admin_name") || "Admin";
+      setUserName(name);
+    };
+
+    window.addEventListener("storage", updateName);
+
+    return () => window.removeEventListener("storage", updateName);
+  }, []);
   useEffect(() => {
     const checkContact = () => {
       fetch("/api/admin/contact.php?act=count_new")
@@ -54,7 +66,11 @@ export default function Header() {
         <div className="header-right">
           {newContact > 0 && (
             <Link to={`/contact`} className="contact">
-              <span className="badge-contact">Liên hệ mới {newContact}</span>
+              <div className="badge-contact">
+                Liên hệ mới
+                <i className="fa-solid fa-bell"></i>
+                <span>{newContact}</span>
+              </div>
             </Link>
           )}
           <div className="greeting">
