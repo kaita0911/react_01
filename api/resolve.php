@@ -1,4 +1,5 @@
 <?php
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -20,11 +21,11 @@ $langid = (int)$langid;
 // 1️⃣ Kiểm tra MENU (page)
 // ==========================
 $menu = $GLOBALS['sp']->getRow("
-    SELECT m.id, m.comp, d.name, d.unique_key
+    SELECT m.id, m.comp, d.name, d.slug
     FROM {$GLOBALS['db_sp']}.menu m
     LEFT JOIN {$GLOBALS['db_sp']}.menu_detail d
       ON d.menu_id = m.id AND d.languageid = {$langid}
-    WHERE d.unique_key = '{$slug}'
+    WHERE d.slug = '{$slug}'
     LIMIT 1
 ");
 
@@ -44,7 +45,7 @@ if ($menu) {
     "type"   => "page",
     "comp"   => (int)$menu['comp'],
     "title"  => $menu['name'],
-    "content"=> isset($article['content']) ? $article['content'] : ''
+    "content" => isset($article['content']) ? $article['content'] : ''
     ]);
     exit;
 }
@@ -57,7 +58,7 @@ $category = $GLOBALS['sp']->getRow("
     FROM {$GLOBALS['db_sp']}.categories c
     LEFT JOIN {$GLOBALS['db_sp']}.categories_detail d
       ON d.categories_id = c.id AND d.languageid = {$langid}
-    WHERE d.unique_key = '{$slug}'
+    WHERE d.slug = '{$slug}'
     LIMIT 1
 ");
 
@@ -67,7 +68,7 @@ if ($category) {
         "type" => "category",
         "comp" => (int)$category['comp'],
         "id"   => (int)$category['id'],
-        "title"=> $category['name']
+        "title" => $category['name']
     ]);
     exit;
 }
@@ -80,7 +81,7 @@ $article = $GLOBALS['sp']->getRow("
     FROM {$GLOBALS['db_sp']}.articlelist a
     LEFT JOIN {$GLOBALS['db_sp']}.articlelist_detail d
       ON d.articlelist_id = a.id AND d.languageid = {$langid}
-    WHERE d.unique_key = '{$slug}' AND a.active = 1
+    WHERE d.slug = '{$slug}' AND a.active = 1
     LIMIT 1
 ");
 
@@ -91,7 +92,7 @@ if ($article) {
         "comp"   => (int)$article['comp'],
         "id"     => (int)$article['id'],
         "title"  => $article['name'],
-        "content"=> $article['content']
+        "content" => $article['content']
     ]);
     exit;
 }

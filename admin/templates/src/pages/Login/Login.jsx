@@ -26,9 +26,8 @@ export default function Login() {
     const data = await res.json();
     console.log(data);
     if (data.status) {
-      localStorage.setItem("admin_token", "logged");
-      console.log("Đã lưu token");
-      navigate("/", { replace: true });
+      localStorage.setItem("admin_token", "true");
+      navigate("/");
     } else {
       setError("Sai tài khoản hoặc mật khẩu !");
     }

@@ -2,7 +2,7 @@
 
 /* ================= CORS ================= */
 
-if(isset($_SERVER['HTTP_ORIGIN'])){
+if(isset($_SERVER['HTTP_ORIGIN'])) {
     header("Access-Control-Allow-Origin: ".$_SERVER['HTTP_ORIGIN']);
     header("Access-Control-Allow-Credentials: true");
 }
@@ -11,7 +11,7 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Content-Type: application/json; charset=UTF-8");
 
-if($_SERVER['REQUEST_METHOD']==='OPTIONS'){
+if($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
 }
@@ -28,19 +28,19 @@ $act = isset($_REQUEST['act']) ? $_REQUEST['act'] : '';
    SWITCH
 ================================================= */
 
-switch($act){
+switch($act) {
 
 
-/* =================================================
-   LIST FIELD CỦA COMPONENT
-================================================= */
+    /* =================================================
+       LIST FIELD CỦA COMPONENT
+    ================================================= */
 
-case "list":
+    case "list":
 
-    $component = isset($_GET['component']) ? intval($_GET['component']) : 0;
-    $target = isset($_GET['target']) ? $_GET['target'] : '';
+        $component = isset($_GET['component']) ? intval($_GET['component']) : 0;
+        $target = isset($_GET['target']) ? $_GET['target'] : '';
 
-    $sql = "
+        $sql = "
     SELECT 
         f.id, cf.field_id,
         f.name,
@@ -53,34 +53,34 @@ case "list":
     WHERE cf.component_id = ?
     ";
 
-    $params = [$component];
+        $params = [$component];
 
-    if($target != ''){
-        $sql .= " AND f.target = ?";
-        $params[] = $target;
-    }
+        if($target != '') {
+            $sql .= " AND f.target = ?";
+            $params[] = $target;
+        }
 
-    $sql .= " ORDER BY cf.position ASC";
+        $sql .= " ORDER BY cf.position ASC";
 
-    $rows = $GLOBALS['sp']->GetAll($sql,$params);
+        $rows = $GLOBALS['sp']->GetAll($sql, $params);
 
-    echo json_encode([
-        "status"=>true,
-        "data"=>$rows
-    ]);
+        echo json_encode([
+            "status" => true,
+            "data" => $rows
+        ]);
 
-break;
+        break;
 
 
-/* =================================================
-   LIST FIELD CHƯA GÁN
-================================================= */
+        /* =================================================
+           LIST FIELD CHƯA GÁN
+        ================================================= */
 
-case "available":
+    case "available":
 
-$component = isset($_GET['component']) ? intval($_GET['component']) : 0;
+        $component = isset($_GET['component']) ? intval($_GET['component']) : 0;
 
-$rows = $GLOBALS['sp']->getAll("
+        $rows = $GLOBALS['sp']->getAll("
 SELECT *
 FROM {$GLOBALS['db_sp']}.fields
 WHERE id NOT IN (
@@ -89,177 +89,180 @@ WHERE id NOT IN (
     WHERE component_id=?
 )
 ORDER BY id DESC
-",[$component]);
+", [$component]);
 
-echo json_encode([
-"status"=>true,
-"data"=>$rows
-],JSON_UNESCAPED_UNICODE);
+        echo json_encode([
+        "status" => true,
+        "data" => $rows
+        ], JSON_UNESCAPED_UNICODE);
 
-exit;
-
-
-
-/* =================================================
-   ADD FIELD TO COMPONENT
-================================================= */
-
-case "add":
-
-$component = isset($_POST['component']) ? intval($_POST['component']) : 0;
-$field     = isset($_POST['field']) ? intval($_POST['field']) : 0;
-
-if(!$component || !$field){
-
-echo json_encode([
-"status"=>false,
-"msg"=>"Missing component or field"
-]);
-
-exit;
-
-}
+        exit;
 
 
-/* position */
 
-$max = $GLOBALS['sp']->getOne("
+        /* =================================================
+           ADD FIELD TO COMPONENT
+        ================================================= */
+
+    case "add":
+
+        $component = isset($_POST['component']) ? intval($_POST['component']) : 0;
+        $field     = isset($_POST['field']) ? intval($_POST['field']) : 0;
+
+        if(!$component || !$field) {
+
+            echo json_encode([
+            "status" => false,
+            "msg" => "Missing component or field"
+            ]);
+
+            exit;
+
+        }
+
+
+        /* position */
+
+        $max = $GLOBALS['sp']->getOne("
 SELECT MAX(position)
 FROM {$GLOBALS['db_sp']}.component_fields
 WHERE component_id=?
-",[$component]);
+", [$component]);
 
-$pos = $max ? $max+1 : 1;
+        $pos = $max ? $max + 1 : 1;
 
 
-/* insert */
+        /* insert */
 
-$GLOBALS['sp']->Execute("
+        $GLOBALS['sp']->Execute("
 INSERT INTO {$GLOBALS['db_sp']}.component_fields
 (component_id,field_id,position)
 VALUES(?,?,?)
-",[$component,$field,$pos]);
+", [$component,$field,$pos]);
 
-echo json_encode([
-"status"=>true
-]);
+        echo json_encode([
+        "status" => true
+        ]);
 
-exit;
+        exit;
 
 
 
-/* =================================================
-   DELETE FIELD
-================================================= */
+        /* =================================================
+           DELETE FIELD
+        ================================================= */
 
-case "delete":
+    case "delete":
 
-$id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+        $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
 
-if($id){
+        if($id) {
 
-$GLOBALS['sp']->Execute("
+            $GLOBALS['sp']->Execute("
 DELETE FROM {$GLOBALS['db_sp']}.component_fields
 WHERE id=?
-",[$id]);
+", [$id]);
 
-}
+        }
 
-echo json_encode([
-"status"=>true
-]);
+        echo json_encode([
+        "status" => true
+        ]);
 
-exit;
+        exit;
 
 
 
-/* =================================================
-   REORDER
-================================================= */
+        /* =================================================
+           REORDER
+        ================================================= */
 
-case "reorder":
+    case "reorder":
 
-$ids = isset($_POST['ids']) ? $_POST['ids'] : [];
+        $ids = isset($_POST['ids']) ? $_POST['ids'] : [];
 
-foreach($ids as $num=>$id){
+        foreach($ids as $num => $id) {
 
-$GLOBALS['sp']->Execute("
+            $GLOBALS['sp']->Execute("
 UPDATE {$GLOBALS['db_sp']}.component_fields
 SET position=?
 WHERE id=?
-",[$num+1,$id]);
+", [$num + 1,$id]);
 
-}
+        }
 
-echo json_encode([
-"status"=>true
-]);
+        echo json_encode([
+        "status" => true
+        ]);
 
-exit;
+        exit;
 
-/* =================================================
-   SAVE
-================================================= */
+        /* =================================================
+           SAVE
+        ================================================= */
 
-case "save":
+    case "save":
 
-    $component = isset($_POST['component']) ? intval($_POST['component']) : 0;
-    
-    $fields = isset($_POST['fields']) ? $_POST['fields'] : [];
-    
-    if(!$component){
-    
-    echo json_encode([
-    "status"=>false
-    ]);
-    
-    exit;
-    
-    }
-    
-    
-    /* xoá field cũ */
-    
-    $GLOBALS['sp']->Execute("
+        $component = isset($_POST['component']) ? intval($_POST['component']) : 0;
+        $nhomcon = isset($_POST['nhomcon']) ? intval($_POST['nhomcon']) : 0;
+        $fields = isset($_POST['fields']) ? $_POST['fields'] : [];
+
+        if(!$component) {
+
+            echo json_encode([
+            "status" => false
+            ]);
+
+            exit;
+
+        }
+
+        $GLOBALS['sp']->Execute(
+            "UPDATE component SET nhomcon=? WHERE id=?",
+            [$nhomcon, $component]
+        );
+        /* xoá field cũ */
+
+        $GLOBALS['sp']->Execute("
     DELETE FROM {$GLOBALS['db_sp']}.component_fields
     WHERE component_id=?
-    ",[$component]);
-    
-    
-    /* insert field mới */
-    
-    $pos = 1;
-    
-    foreach($fields as $field){
-    
-    $GLOBALS['sp']->Execute("
+    ", [$component]);
+
+
+        /* insert field mới */
+
+        $pos = 1;
+
+        foreach($fields as $field) {
+
+            $GLOBALS['sp']->Execute("
     INSERT INTO {$GLOBALS['db_sp']}.component_fields
     (component_id,field_id,position)
     VALUES(?,?,?)
-    ",[$component,$field,$pos]);
-    
-    $pos++;
-    
-    }
-    
-    echo json_encode([
-    "status"=>true
-    ]);
-    
-    exit;
+    ", [$component,$field,$pos]);
+
+            $pos++;
+
+        }
+
+        echo json_encode([
+        "status" => true
+        ]);
+
+        exit;
 
 
-/* =================================================
-   DEFAULT
-================================================= */
+        /* =================================================
+           DEFAULT
+        ================================================= */
 
-default:
+    default:
 
-echo json_encode([
-"status"=>false,
-"msg"=>"Invalid action"
-]);
+        echo json_encode([
+        "status" => false,
+        "msg" => "Invalid action"
+        ]);
 
-exit;
+        exit;
 
 }

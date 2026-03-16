@@ -49,7 +49,7 @@ export default function Sidebar({ modules }) {
             </div>
           );
         })}
-
+        <Link to="/contact">Liên hệ</Link>
         {/* THÔNG TIN WEBSITE */}
         <div className="menu-parent">
           <div className="menu-title" onClick={() => setOpen(!open)}>

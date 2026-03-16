@@ -1,4 +1,5 @@
 <?php
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -19,7 +20,7 @@ $langid     = 1; // tùy hệ thống bạn
 if ($act === "detail") {
 
     $sql = "
-        SELECT a.*, d.*, dt.name as category_name, dt.unique_key as category_slug
+        SELECT a.*, d.*, dt.name as category_name, dt.slug as category_slug
         FROM {$GLOBALS['db_sp']}.articlelist AS a
         LEFT JOIN {$GLOBALS['db_sp']}.articlelist_detail AS d
             ON d.articlelist_id = a.id AND d.languageid = {$langid}
@@ -28,7 +29,7 @@ if ($act === "detail") {
         ON ac.articlelist_id = a.id
         LEFT JOIN {$GLOBALS['db_sp']}.categories_detail AS dt
                 ON dt.categories_id = ac.categories_id AND d.languageid = {$langid}
-        WHERE d.unique_key = '{$slug}'
+        WHERE d.slug = '{$slug}'
         LIMIT 1
     ";
 
@@ -50,33 +51,33 @@ if ($act === "detail") {
     foreach ($allCate as $c) {
 
         $cid = (int)$c['categories_id'];
-    
+
         // Nếu KHÔNG phải cha của ai → là leaf
         $isParent = (int)$GLOBALS['sp']->getOne("
             SELECT COUNT(*)
             FROM {$GLOBALS['db_sp']}.categories_related
             WHERE related_id = {$cid}
         ");
-    
+
         if ($isParent == 0) {
             $leafCate = $cid;
             break;
         }
     }
-    
+
     // Nếu không tìm được → fallback
     if ($leafCate == 0) {
         $leafCate = (int)$rs['cate_id'];
     }
-    
+
     $currentId = $leafCate;
     while ($currentId > 0) {
-    
+
         // Lấy thông tin category hiện tại
         $cat = $GLOBALS['sp']->getRow("
             SELECT c.id,
                    cd.name,
-                   cd.unique_key
+                   cd.slug
             FROM {$GLOBALS['db_sp']}.categories c
             LEFT JOIN {$GLOBALS['db_sp']}.categories_detail cd
                 ON cd.categories_id = c.id
@@ -84,27 +85,31 @@ if ($act === "detail") {
             WHERE c.id = {$currentId}
             LIMIT 1
         ");
-    
-        if (!$cat) break;
-    
-         // ⭐ CHÈN VÀO ĐẦU → ROOT → LEAF
+
+        if (!$cat) {
+            break;
+        }
+
+        // ⭐ CHÈN VÀO ĐẦU → ROOT → LEAF
         array_unshift($category_path, [
             "id"   => $cat['id'],
             "name" => $cat['name'],
-            "slug" => $cat['unique_key']
+            "slug" => $cat['slug']
         ]);
-    
+
         // Tìm category CHA trong bảng categories_related
-            $parent = $GLOBALS['sp']->getRow("
+        $parent = $GLOBALS['sp']->getRow("
             SELECT related_id
             FROM {$GLOBALS['db_sp']}.categories_related
             WHERE category_id = {$currentId}
             LIMIT 1
         ");
-        if (!$parent) break;
+        if (!$parent) {
+            break;
+        }
 
         $currentId = (int)$parent['related_id'];
-        
+
     }
 
     // ===== Mục lục =====
@@ -126,7 +131,7 @@ if ($act === "detail") {
 
     // ===== Tin liên quan =====
     $sql_related = "
-        SELECT a.id, d.unique_key, a.img_thumb_vn, a.dated,
+        SELECT a.id, d.slug, a.img_thumb_vn, a.dated,
                d.name AS title
         FROM {$GLOBALS['db_sp']}.articlelist AS a
         LEFT JOIN {$GLOBALS['db_sp']}.articlelist_detail AS d
@@ -153,7 +158,7 @@ if ($act === "detail") {
         "toc"     => $toc,
         "related" => $related,
         "comp"      => $rs['comp'],          // ⭐ cực quan trọng
-     
+
         "category_name" => $rs['category_name'],
         "category_slug" => $rs['category_slug'],
         "category_path" => $category_path,
@@ -174,20 +179,20 @@ $start    = ($page - 1) * $perPage;
 $joinCate  = "";
 $whereCate = "";
 $category_path = [];
-$cat="";
+$cat = "";
 if ($act === "sub" && $cate_id > 0) {
     $joinCate  = "INNER JOIN {$GLOBALS['db_sp']}.articlelist_categories ac ON ac.articlelist_id = a.id";
     $whereCate = "AND ac.categories_id = {$cate_id}";
 
     $currentId = (int)$cate_id;
-    
+
     while ($currentId > 0) {
 
         // Lấy info category hiện tại
         $cat = $GLOBALS['sp']->getRow("
             SELECT c.id, c.img_vn,
                    cd.name,
-                   cd.unique_key, cd.keyword, cd.des
+                   cd.slug, cd.keyword, cd.des
             FROM {$GLOBALS['db_sp']}.categories c
             LEFT JOIN {$GLOBALS['db_sp']}.categories_detail cd
                 ON cd.categories_id = c.id
@@ -196,13 +201,15 @@ if ($act === "sub" && $cate_id > 0) {
             LIMIT 1
         ");
 
-        if (!$cat) break;
+        if (!$cat) {
+            break;
+        }
 
         // ⭐ CHÈN VÀO ĐẦU → ROOT → LEAF
         array_unshift($category_path, [
             "id"   => $cat['id'],
             "name" => $cat['name'],
-            "slug" => $cat['unique_key'],
+            "slug" => $cat['slug'],
             "img_vn"   => $cat['img_vn'],
             "des" => $cat['des'],
             "keyword" => $cat['keyword']
@@ -219,7 +226,9 @@ if ($act === "sub" && $cate_id > 0) {
             LIMIT 1
         ");
 
-        if ($parentId <= 0) break;
+        if ($parentId <= 0) {
+            break;
+        }
 
         $currentId = $parentId;
     }
@@ -228,7 +237,7 @@ if ($act === "sub" && $cate_id > 0) {
 $sql = "
     SELECT a.id, a.img_thumb_vn,
            d.name ,
-           d.unique_key,d.short,a.dated
+           d.slug,d.short,a.dated
         
     FROM {$GLOBALS['db_sp']}.articlelist a
     LEFT JOIN {$GLOBALS['db_sp']}.articlelist_detail d

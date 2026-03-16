@@ -24,43 +24,43 @@ switch ($act) {
     case "delete_multiple":
 
         $ids = isset($_POST['ids']) ? $_POST['ids'] : array();
-    
+
         if (empty($ids)) {
             echo json_encode(array("status" => false));
             exit;
         }
-    
+
         try {
-    
+
             foreach ($ids as $id) {
-    
+
                 $id = intval($id);
-    
+
                 $GLOBALS['sp']->Execute(
                     "DELETE FROM {$GLOBALS['db_sp']}.menu_detail WHERE menu_id=?",
                     array($id)
                 );
-    
+
                 $GLOBALS['sp']->Execute(
                     "DELETE FROM {$GLOBALS['db_sp']}.menu WHERE id=?",
                     array($id)
                 );
             }
-    
+
             echo json_encode(array("status" => true));
-    
+
         } catch (Exception $e) {
-    
+
             echo json_encode(array(
                 "status" => false,
                 "message" => $e->getMessage()
             ));
         }
-    
+
         break;
-    // =========================
-    // DELETE
-    // =========================
+        // =========================
+        // DELETE
+        // =========================
     case "delete":
 
         $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
@@ -96,25 +96,25 @@ switch ($act) {
         }
 
         break;
-    // =========================
-    // săp xếp
+        // =========================
+        // săp xếp
     case "reorder":
         $ids  = isset($_POST['id']) ? $_POST['id'] : array();
         $nums = isset($_POST['num']) ? $_POST['num'] : array();
         foreach ($ids as $i => $id) {
 
-        $id  = intval($id);
-        $num = isset($nums[$i]) ? intval($nums[$i]) : 0;
+            $id  = intval($id);
+            $num = isset($nums[$i]) ? intval($nums[$i]) : 0;
 
-        $conn->query("UPDATE menu SET num=$num WHERE id=$id");
+            $conn->query("UPDATE menu SET num=$num WHERE id=$id");
         }
 
         echo json_encode(["status" => true]);
-    break;
-    // =========================
-    // =========================
-    // THÊM MỚI
-    // =========================
+        break;
+        // =========================
+        // =========================
+        // THÊM MỚI
+        // =========================
     case "add":
 
         $comp     = isset($_POST['comp']) ? intval($_POST['comp']) : 0;
@@ -122,7 +122,7 @@ switch ($act) {
         $has_sub  = isset($_POST['has_sub']) ? intval($_POST['has_sub']) : 0;
 
         $name       = isset($_POST['name']) ? trim($_POST['name']) : '';
-        $unique_key = isset($_POST['unique_key']) ? trim($_POST['unique_key']) : '';
+        $slug = isset($_POST['slug']) ? trim($_POST['slug']) : '';
         $lang       = isset($_POST['languageid']) ? intval($_POST['languageid']) : 1;
 
         if ($name == '') {
@@ -160,14 +160,14 @@ switch ($act) {
 
             // ===== INSERT menu_detail =====
             $sql2 = "INSERT INTO {$GLOBALS['db_sp']}.menu_detail
-                    (menu_id, languageid, name, unique_key)
+                    (menu_id, languageid, name, slug)
                     VALUES (?, ?, ?, ?)";
 
             $GLOBALS['sp']->Execute($sql2, array(
                 $menu_id,
                 $lang,
                 $name,
-                $unique_key
+                $slug
             ));
 
             echo json_encode(array(
@@ -185,20 +185,20 @@ switch ($act) {
 
         break;
 
-    // =========================
-    // update
-    // =========================
+        // =========================
+        // update
+        // =========================
     case "update":
 
         $id       = isset($_POST['id']) ? intval($_POST['id']) : 0;
         $comp     = isset($_POST['comp']) ? intval($_POST['comp']) : 0;
         $link_out = isset($_POST['link_out']) ? trim($_POST['link_out']) : '';
         $has_sub  = isset($_POST['has_sub']) ? intval($_POST['has_sub']) : 0;
-    
+
         $name       = isset($_POST['name']) ? trim($_POST['name']) : '';
-        $unique_key = isset($_POST['unique_key']) ? trim($_POST['unique_key']) : '';
+        $slug = isset($_POST['slug']) ? trim($_POST['slug']) : '';
         $lang       = isset($_POST['languageid']) ? intval($_POST['languageid']) : 1;
-    
+
         if ($id <= 0) {
             echo json_encode(array(
                 "status" => false,
@@ -206,49 +206,49 @@ switch ($act) {
             ));
             exit;
         }
-    
+
         try {
-    
+
             // ===== UPDATE bảng menu =====
             $sql = "UPDATE {$GLOBALS['db_sp']}.menu
                     SET comp=?, link_out=?, has_sub=?
                     WHERE id=?";
-    
+
             $GLOBALS['sp']->Execute($sql, array(
                 $comp,
                 $link_out,
                 $has_sub,
                 $id
             ));
-    
+
             // ===== UPDATE menu_detail =====
             $sql2 = "UPDATE {$GLOBALS['db_sp']}.menu_detail
-                     SET name=?, unique_key=?
+                     SET name=?, slug=?
                      WHERE menu_id=? AND languageid=?";
-    
+
             $GLOBALS['sp']->Execute($sql2, array(
                 $name,
-                $unique_key,
+                $slug,
                 $id,
                 $lang
             ));
-    
+
             echo json_encode(array(
                 "status" => true
             ));
-    
+
         } catch (Exception $e) {
-    
+
             echo json_encode(array(
                 "status" => false,
                 "message" => $e->getMessage()
             ));
         }
-    
+
         break;
-    // =========================
-    // LIST MENU
-    // =========================
+        // =========================
+        // LIST MENU
+        // =========================
     case "list":
 
         // Lấy menu
@@ -284,9 +284,9 @@ switch ($act) {
 
         break;
 
-    // =========================
-    // DETAIL MENU
-    // =========================
+        // =========================
+        // DETAIL MENU
+        // =========================
     case "detail":
 
         $id = intval(isset($_GET['id']) ? $_GET['id'] : 0);

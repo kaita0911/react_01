@@ -54,6 +54,11 @@ export default function CategoryList() {
   const { module } = useParams();
   const navigate = useNavigate();
 
+  const [deleteId, setDeleteId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [deleteMode, setDeleteMode] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [fields, setFields] = useState([]);
@@ -187,11 +192,9 @@ export default function CategoryList() {
   };
   /* ================= DELETE ================= */
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Xóa danh mục?")) return;
-
+  const handleDelete = async () => {
     const fd = new FormData();
-    fd.append("id", id);
+    fd.append("id", deleteId);
 
     const res = await fetch("/api/admin/category.php?act=delete", {
       method: "POST",
@@ -201,10 +204,54 @@ export default function CategoryList() {
     const data = await res.json();
 
     if (data.status) {
-      setRows((prev) => prev.filter((r) => r.id !== id));
+      setRows((prev) => prev.filter((r) => r.id !== deleteId));
+    }
+
+    setDeleteId(null);
+  };
+  // ===== XOÁ NHIỀU =====
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+  const toggleSelectAll = () => {
+    if (selectedIds.length === rows.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(rows.map((r) => r.id));
     }
   };
+  const handleDeleteMultiple = async () => {
+    if (selectedIds.length === 0) return;
 
+    const fd = new FormData();
+
+    selectedIds.forEach((id) => {
+      fd.append("ids[]", id);
+    });
+
+    const res = await fetch("/api/admin/category.php?act=delete_multiple", {
+      method: "POST",
+      body: fd,
+    });
+
+    const data = await res.json();
+
+    if (data.status) {
+      setRows((prev) => prev.filter((r) => !selectedIds.includes(r.id)));
+      setSelectedIds([]);
+    }
+
+    setShowDeleteModal(false);
+  };
+  const confirmDelete = () => {
+    if (deleteMode === "single") {
+      handleDelete();
+    } else if (deleteMode === "multiple") {
+      handleDeleteMultiple();
+    }
+  };
   /* ================= DRAG ================= */
 
   const handleDragEnd = async (event) => {
@@ -298,6 +345,17 @@ export default function CategoryList() {
         <Link to={`/${module}/category/create`} className="c-btn btn-add">
           <i className="fa-solid fa-circle-plus"></i> Thêm mới
         </Link>
+        <button
+          className="c-btn btn-delete-multi"
+          disabled={selectedIds.length === 0}
+          onClick={() => {
+            setDeleteMode("multiple");
+            setShowDeleteModal(true);
+          }}
+        >
+          <i className="fa-solid fa-trash-can"></i> Xoá đã chọn
+          {selectedIds.length > 0 && `(${selectedIds.length})`}
+        </button>
       </div>
       {languages.length > 1 && (
         <div className="lang-tabs-header list">
@@ -316,6 +374,16 @@ export default function CategoryList() {
         <table className="admin-table">
           <thead>
             <tr>
+              <th className="col-id txt-center">
+                <input
+                  className="check-del"
+                  type="checkbox"
+                  checked={
+                    rows?.length > 0 && selectedIds.length === rows.length
+                  }
+                  onChange={toggleSelectAll}
+                />
+              </th>
               <th className="col-order txt-center">Thứ tự</th>
               {getField("hinhdanhmuc") && (
                 <th className="col-order txt-center">Hình</th>
@@ -339,17 +407,16 @@ export default function CategoryList() {
                 <SortableRow key={item.id} item={item}>
                   {({ attributes, listeners }) => (
                     <>
+                      <td className="txt-center">
+                        <input
+                          className="check-del"
+                          type="checkbox"
+                          checked={selectedIds.includes(item.id)}
+                          onChange={() => toggleSelect(item.id)}
+                        />
+                      </td>
                       <td className="txt-center">{item.num}</td>
                       {getField("hinhdanhmuc") && (
-                        // <td className="txt-center">
-                        //   {item.img_vn && (
-                        //     <img
-                        //       className="img-thumbs"
-                        //       src={API_URL + `${item.img_vn}`}
-                        //       alt={item.name}
-                        //     />
-                        //   )}
-                        // </td>
                         <td className="txt-center">
                           <label className="img-edit">
                             <input
@@ -424,7 +491,6 @@ export default function CategoryList() {
                           </label>
                         </td>
                       )}
-
                       <td className="txt-center">
                         <label className="switch">
                           <input
@@ -450,7 +516,11 @@ export default function CategoryList() {
 
                           <button
                             className="act btn-delete"
-                            onClick={() => handleDelete(item.id)}
+                            onClick={() => {
+                              setDeleteId(item.id);
+                              setDeleteMode("single");
+                              setShowDeleteModal(true);
+                            }}
                           >
                             <i className="fa-solid fa-trash"></i>
                           </button>
@@ -484,6 +554,52 @@ export default function CategoryList() {
           </SortableContext>
         </table>
       </DndContext>
+      {deleteId && (
+        <div className="modal">
+          <div className="modal-box">
+            <h3>Xác nhận xoá</h3>
+            <p>Bạn có chắc muốn xóa?</p>
+            <div className="modal-actions">
+              <button className="btn-confirm" onClick={handleDelete}>
+                <i className="fa-solid fa-trash"></i> Xoá
+              </button>
+              <button className="btn-cancel" onClick={() => setDeleteId(null)}>
+                Hủy
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeleteModal && (
+        <div className="modal">
+          <div className="modal-box delete-box">
+            <h3>Xác nhận xoá</h3>
+
+            <p>
+              {deleteMode === "single"
+                ? "Bạn có chắc muốn xoá dữ liệu này?"
+                : `Bạn có chắc muốn xoá ${selectedIds.length} dòng đã chọn?`}
+            </p>
+
+            <div className="modal-actions">
+              <button className="btn-confirm" onClick={confirmDelete}>
+                Xoá
+              </button>
+
+              <button
+                className="btn-cancel"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteId(null);
+                  setDeleteMode(null);
+                }}
+              >
+                Huỷ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

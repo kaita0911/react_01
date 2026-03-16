@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { slugify } from "@/utils/slugify";
 import Editor from "@/utils/Ckeditor";
 import UploadImage from "@/pages/components/UploadImage";
-
+import MetaKeywords from "@/utils/MetaKeywords";
 export default function CategoryEdit() {
   const { module, id } = useParams();
   const navigate = useNavigate();
@@ -106,23 +106,6 @@ export default function CategoryEdit() {
 
       const cat = data.category;
       const langs = buildLangData(languages, fields, data.languages);
-
-      // const langs = {};
-      // // tạo object language mặc định
-      // languages.forEach((l) => {
-      //   langs[l.id] = {
-      //     name: "",
-      //     slug: "",
-      //   };
-      // });
-      // // gán dữ liệu từ DB
-      // data.languages.forEach((l) => {
-      //   langs[l.languageid] = {
-      //     name: l.name,
-      //     slug: l.slug,
-      //     content: l.content,
-      //   };
-      // });
 
       setSelectedId(cat.parent_id);
 
@@ -317,6 +300,23 @@ export default function CategoryEdit() {
                       />
                     </div>
                   )}
+                  <div className="form-group">
+                    <label>Meta tags</label>
+                    <MetaKeywords
+                      value={langData.keyword || ""}
+                      onChange={(v) => handleLangChange(lang.id, "keyword", v)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Meta description</label>
+                    <textarea
+                      className="form-textarea"
+                      value={langData.des || ""}
+                      onChange={(e) =>
+                        handleLangChange(lang.id, "des", e.target.value)
+                      }
+                    />
+                  </div>
                 </div>
               );
             })}

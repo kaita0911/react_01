@@ -1,4 +1,5 @@
 <?php
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -29,15 +30,15 @@ $where  = '';
 $params = array();
 $keyword     = vn_to_slug($q);
 if ($keyword !== '') {
-  $where    = " AND d.name LIKE ? ";
-  $params[] = '%' . $keyword . '%';
+    $where    = " AND d.name LIKE ? ";
+    $params[] = '%' . $keyword . '%';
 }
 $sql = "
 SELECT 
     a.id,
     a.img_thumb_vn,
     d.name,
-    d.unique_key AS slug,
+    d.slug AS slug,
     d.short,
     p.price,
     p.priceold
@@ -64,7 +65,7 @@ LEFT JOIN {$GLOBALS['db_sp']}.articlelist_detail d
 WHERE a.active = 1
   AND a.comp = 2
   $where
-",$params);
+", $params);
 echo json_encode([
     "success" => true,
     "keyword" => $q,

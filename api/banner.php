@@ -1,4 +1,5 @@
 <?php
+
 header("Content-Type: application/json; charset=utf-8");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, OPTIONS");
@@ -23,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 //
 // 🔥 LẤY comp từ URL
 //
-$comp = isset($_GET['comp']) ? intval($_GET['comp']) : ""; 
+$comp = isset($_GET['comp']) ? intval($_GET['comp']) : "";
 // nếu không truyền → mặc định comp = 7
 
 // ===== Lấy banner =====
@@ -31,7 +32,7 @@ $rs_banner = $GLOBALS['sp']->getAll("
     SELECT 
         a.id,
         a.img_thumb_vn,
-        d.unique_key AS slug,
+        d.slug AS slug,
         d.name
     FROM {$GLOBALS['db_sp']}.articlelist AS a
     LEFT JOIN {$GLOBALS['db_sp']}.articlelist_detail AS d

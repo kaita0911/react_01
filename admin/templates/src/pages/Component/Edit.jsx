@@ -5,7 +5,8 @@ export default function ComponentFields() {
   const navigate = useNavigate();
   const [fields, setFields] = useState([]);
   const [selected, setSelected] = useState([]);
-  console.log("component:", component);
+  const [nhomcon, setNhomcon] = useState(0);
+
   /* ================= LOAD ================= */
 
   const loadData = async () => {
@@ -30,6 +31,15 @@ export default function ComponentFields() {
       console.log(ids);
       setSelected(ids);
     }
+    const res3 = await fetch(
+      `/api/admin/component.php?act=detail&id=${component}`
+    );
+    const data3 = await res3.json();
+
+    if (data3.status) {
+      setNhomcon(Number(data3.data.nhomcon));
+    }
+    console.log("component detail:", data3);
   };
 
   useEffect(() => {
@@ -72,7 +82,7 @@ export default function ComponentFields() {
     const fd = new FormData();
 
     fd.append("component", component);
-
+    fd.append("nhomcon", nhomcon); // thêm dòng này
     selected.forEach((id) => {
       fd.append("fields[]", id);
     });
@@ -123,6 +133,24 @@ export default function ComponentFields() {
               </div>
             </fieldset>
           ))}
+        <fieldset>
+          <legend>Thuộc tính chung</legend>
+
+          <div className="box-feature">
+            <label className="feature-item">
+              <span>
+                <small>nhomcon</small>
+                Nhóm con
+              </span>
+
+              <input
+                type="checkbox"
+                checked={nhomcon === 1}
+                onChange={(e) => setNhomcon(e.target.checked ? 1 : 0)}
+              />
+            </label>
+          </div>
+        </fieldset>
       </div>
       <br />
     </div>

@@ -4,8 +4,8 @@ export default function FieldsList() {
 
   const [name, setName] = useState("");
   const [label, setLabel] = useState("");
-  const [type, setType] = useState("text");
-  const [target, setTarget] = useState("text");
+  const [type, setType] = useState("");
+  const [target, setTarget] = useState("article");
 
   const [showModal, setShowModal] = useState(false);
   const [editField, setEditField] = useState(null);

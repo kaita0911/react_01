@@ -1,4 +1,5 @@
 <?php
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
@@ -26,7 +27,7 @@ if ($act === "detail") {
         FROM {$GLOBALS['db_sp']}.articlelist AS a
         LEFT JOIN {$GLOBALS['db_sp']}.articlelist_detail AS d
             ON d.articlelist_id = a.id AND d.languageid = {$langid}
-        WHERE d.unique_key = '{$slug}'
+        WHERE d.slug = '{$slug}'
         LIMIT 1
     ";
 
@@ -56,7 +57,7 @@ if ($act === "detail") {
 
     // ===== Tin liên quan =====
     $sql_related = "
-        SELECT a.id, a.unique_key, a.img_thumb_vn, a.dated,
+        SELECT a.id, a.slug, a.img_thumb_vn, a.dated,
                d.name AS title
         FROM {$GLOBALS['db_sp']}.articlelist AS a
         LEFT JOIN {$GLOBALS['db_sp']}.articlelist_detail AS d
@@ -95,7 +96,7 @@ $start = ($page - 1) * $perPage;
 $sql = "
     SELECT a.id, a.img_thumb_vn, a.dated,
            d.name,
-           d.unique_key,
+           d.slug,
            d.content, d.keyword, d.des
     FROM {$GLOBALS['db_sp']}.articlelist AS a
     LEFT JOIN {$GLOBALS['db_sp']}.articlelist_detail AS d

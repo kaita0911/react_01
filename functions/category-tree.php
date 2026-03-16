@@ -4,7 +4,7 @@ function getCategoryTree($sp, $db_sp, $langid)
 {
     $sql_cat = "SELECT c.id, c.comp, c.active,
                d.name AS name_detail,
-               d.unique_key,
+               d.slug,
                c.img_vn
         FROM {$db_sp}.categories AS c
         LEFT JOIN {$db_sp}.categories_detail AS d
@@ -68,7 +68,8 @@ function getCategoryTree($sp, $db_sp, $langid)
     return $tree;
 }
 
-function normalizeArray($data) {
+function normalizeArray($data)
+{
     return array_map(function ($item) {
         return array_filter(
             $item,

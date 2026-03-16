@@ -1,4 +1,5 @@
 <?php
+
 header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 
@@ -19,7 +20,7 @@ $keyword = $GLOBALS['sp']->qstr('%' . $q . '%');
 $sql = "
 SELECT 
     d.name,a.img_thumb_vn,
-    d.unique_key AS slug,
+    d.slug AS slug,
     p.price, p.priceold
 FROM {$GLOBALS['db_sp']}.articlelist a
 LEFT JOIN {$GLOBALS['db_sp']}.articlelist_detail d

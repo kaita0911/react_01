@@ -1,4 +1,5 @@
 <?php
+
 header("Content-Type: application/json; charset=utf-8");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, OPTIONS");
@@ -30,7 +31,7 @@ SELECT
     c.id,
     c.num,
     d.name,
-    d.unique_key as slug
+    d.slug as slug
 FROM {$GLOBALS['db_sp']}.categories AS c
 INNER JOIN {$GLOBALS['db_sp']}.categories_detail AS d
     ON d.categories_id = c.id
@@ -55,7 +56,7 @@ foreach ($categories as &$cat) {
         a.id,
         a.img_thumb_vn,
         d.name,
-        d.unique_key as slug,
+        d.slug as slug,
 
         COALESCE(
             NULLIF(p.price, 0),

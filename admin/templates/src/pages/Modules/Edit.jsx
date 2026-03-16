@@ -1,9 +1,9 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Editor from "@/utils/Ckeditor";
 import UploadImage from "@/pages/components/UploadImage";
 import UploadMultipleImages from "@/pages/components/UploadMultipleImages";
-
+import MetaKeywords from "@/utils/MetaKeywords";
 import { slugify } from "@/utils/slugify";
 
 export default function Edit() {
@@ -13,63 +13,62 @@ export default function Edit() {
   const [fields, setFields] = useState([]);
   const [languages, setLanguages] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
-
+  const [categories, setCategories] = useState([]);
+  const [compId, setCompId] = useState(null);
   const [form, setForm] = useState({ languages: {} });
   const [fileMap, setFileMap] = useState({});
   const [gallery, setGallery] = useState([]);
   const [deletedGallery, setDeletedGallery] = useState([]);
-  const sidebarFields = [
-    "hinhanh",
-    "nhieuhinh",
-    "active",
-    "hot",
-    "mostview",
-    "new",
-    "price",
-    "priceold",
-  ];
-
-  const toggleFields = ["active", "hot", "mostview", "new"];
-  const priceFields = ["price", "priceold"];
-
-  const langFields = ["name", "slug", "short", "des"];
-
-  const fieldLabels = {
-    hinhanh: "Ảnh đại diện",
-    nhieuhinh: "Ảnh liên quan",
-    des: "Mô tả chi tiết",
-    short: "Mô tả ngắn",
-    active: "Active",
-    hot: "Nổi bật",
-    mostview: "Xem nhiều",
-    new: "Mới",
-    price: "Giá",
-    priceold: "Giá cũ",
-  };
-
-  /* ================= LOAD DATA ================= */
-
+  /* ================= load component ================= */
   useEffect(() => {
-    const loadData = async () => {
-      // component
-      const comp = await fetch(
+    const loadComponent = async () => {
+      const res = await fetch(
         `/api/admin/component.php?act=comp&module=${module}`
-      ).then((r) => r.json());
-
-      if (comp.status) setFields(Object.keys(comp.data));
-
-      // languages
-      const lang = await fetch("/api/admin/language.php?act=list").then((r) =>
-        r.json()
       );
 
-      if (lang.status) {
-        const activeLang = lang.data.filter((l) => l.active == 1);
+      const data = await res.json();
+
+      if (data.status) {
+        setCompId(data.data);
+      }
+    };
+
+    loadComponent();
+  }, [module]);
+  /* ================= load field languges cate ================= */
+  useEffect(() => {
+    if (!compId) return;
+
+    const loadData = async () => {
+      const [fieldRes, langRes, cateRes] = await Promise.all([
+        fetch(
+          `/api/admin/component_fields.php?act=list&component=${compId}&target=article`
+        ),
+        fetch(`/api/admin/language.php?act=list`),
+        fetch(`/api/admin/category.php?act=list&comp=${compId}`),
+      ]);
+
+      const fieldData = await fieldRes.json();
+      const langData = await langRes.json();
+      const cateData = await cateRes.json();
+
+      if (fieldData.status) setFields(fieldData.data);
+      // console.log(fieldData.data);
+      if (langData.status) {
+        const activeLang = langData.data.filter((l) => l.active == 1);
         setLanguages(activeLang);
         if (activeLang.length) setActiveTab(activeLang[0].id);
       }
 
-      // detail
+      if (cateData.status) setCategories(cateData.data);
+    };
+
+    loadData();
+  }, [compId]);
+  /* ================= LOAD DATA ================= */
+
+  useEffect(() => {
+    const loadData = async () => {
       if (id) {
         const detail = await fetch(
           `/api/admin/articlelist.php?act=detail&id=${id}`
@@ -82,10 +81,7 @@ export default function Edit() {
           // console.log("LANGUAGES:", d.languages);
 
           setForm({
-            active: Number(d.active),
-            hot: Number(d.hot),
-            mostview: Number(d.mostview),
-            new: Number(d.new),
+            parent_id: d.parent_id, // QUAN TRỌNG
             hinhanh: d.img_thumb_vn,
             languages: d.languages || {},
             price: d.price || "",
@@ -99,6 +95,13 @@ export default function Edit() {
 
     loadData();
   }, [module, id]);
+  /* ================= HELP ================= */
+
+  const fieldMap = useMemo(() => {
+    const map = {};
+    fields.forEach((f) => (map[f.name] = f));
+    return map;
+  }, [fields]);
 
   /* ================= UPDATE FORM ================= */
 
@@ -118,7 +121,9 @@ export default function Edit() {
       },
     }));
   };
-
+  const handleSelect = (id) => {
+    setForm((p) => ({ ...p, parent_id: id }));
+  };
   /* ================= UPDATE ================= */
 
   const handleUpdate = async () => {
@@ -126,7 +131,7 @@ export default function Edit() {
 
     fd.append("id", id);
     fd.append("module", module);
-
+    fd.append("parent_id", form.parent_id || 0);
     for (const k in form) {
       if (k === "languages") {
         fd.append("languages", JSON.stringify(form.languages));
@@ -168,67 +173,39 @@ export default function Edit() {
     else alert("Lỗi cập nhật");
   };
 
-  /* ================= FIELD SPLIT ================= */
+  /* ================= TREE ================= */
+  const isParentOfSelected = (item) => {
+    if (form.parent_id === item.id) return true;
 
-  const sideFields = fields.filter((f) => sidebarFields.includes(f));
+    const checkChildren = (children) => {
+      for (let c of children || []) {
+        if (c.id === form.parent_id) return true;
+        if (checkChildren(c.children)) return true;
+      }
+      return false;
+    };
 
-  /* ================= RENDER FIELD ================= */
-
-  const renderField = (key) => {
-    if (key === "hinhanh") {
-      return (
-        <UploadImage
-          currentImage={form[key]}
-          onChange={(file) => {
-            setFileMap((p) => ({ ...p, [key]: file }));
-            handleChange(key, file.name);
-          }}
-        />
-      );
-    }
-    if (key === "nhieuhinh") {
-      return (
-        <UploadMultipleImages
-          images={gallery}
-          setImages={setGallery}
-          setDeletedIds={setDeletedGallery}
-        />
-      );
-    }
-
-    if (toggleFields.includes(key)) {
-      return (
-        <label className="switch">
+    return checkChildren(item.children);
+  };
+  const renderTree = (list, level = 0) =>
+    list.map((item) => (
+      <div key={item.id} className="cat-item">
+        <label className="cat-label">
           <input
             type="checkbox"
-            checked={Number(form[key]) === 1}
-            onChange={(e) => handleChange(key, e.target.checked ? 1 : 0)}
+            checked={isParentOfSelected(item)}
+            onChange={() => handleSelect(item.id)}
           />
-          <span className="slider"></span>
+
+          <span className="cat-name">
+            {"-- ".repeat(level)}
+            {item.names?.[activeTab] || "-"}
+          </span>
         </label>
-      );
-    }
 
-    if (priceFields.includes(key)) {
-      return (
-        <input
-          type="text"
-          className="form-control"
-          value={form[key] ? Number(form[key]).toLocaleString("vi-VN") : ""}
-          onChange={(e) => handleChange(key, e.target.value.replace(/\D/g, ""))}
-        />
-      );
-    }
-
-    return (
-      <input
-        type="text"
-        className="form-control"
-        value={form[key] || ""}
-        onChange={(e) => handleChange(key, e.target.value)}
-      />
-    );
-  };
+        {item.children?.length > 0 && renderTree(item.children, level + 1)}
+      </div>
+    ));
 
   /* ================= RENDER ================= */
 
@@ -282,34 +259,56 @@ export default function Edit() {
                       }}
                     />
                   </div>
-
                   <div className="form-group">
                     <label>Slug</label>
                     <input value={langData.slug || ""} readOnly />
                   </div>
-
-                  {langFields
-                    .filter((f) => !["name", "slug"].includes(f))
-                    .map((key) => (
-                      <div className="form-group" key={key}>
-                        <label>{fieldLabels[key] || key}</label>
-
-                        {["short", "des"].includes(key) ? (
-                          <Editor
-                            key={`${lang.id}-${key}`}
-                            value={langData[key] || ""}
-                            onChange={(v) => handleLangChange(lang.id, key, v)}
-                          />
-                        ) : (
-                          <input
-                            value={langData[key] || ""}
-                            onChange={(e) =>
-                              handleLangChange(lang.id, key, e.target.value)
-                            }
-                          />
-                        )}
-                      </div>
-                    ))}
+                  {fieldMap.short && (
+                    <div className="form-group">
+                      <label>Mô tả vắn tắt</label>
+                      <textarea
+                        className="form-textarea"
+                        value={langData.short || ""}
+                        onChange={(e) =>
+                          handleLangChange(lang.id, "short", e.target.value)
+                        }
+                      />
+                    </div>
+                  )}
+                  {fieldMap.content && (
+                    <div className="form-group">
+                      <label>Mô tả chi tiết</label>
+                      <Editor
+                        value={langData.content || ""}
+                        onChange={(v) =>
+                          handleLangChange(lang.id, "content", v)
+                        }
+                      />
+                    </div>
+                  )}
+                  {fieldMap.tag && (
+                    <div className="form-group">
+                      <label>Meta tags</label>
+                      <MetaKeywords
+                        value={langData.keyword || ""}
+                        onChange={(v) =>
+                          handleLangChange(lang.id, "keyword", v)
+                        }
+                      />
+                    </div>
+                  )}
+                  {fieldMap.meta_description && (
+                    <div className="form-group">
+                      <label>Meta description</label>
+                      <textarea
+                        className="form-textarea"
+                        value={langData.des || ""}
+                        onChange={(e) =>
+                          handleLangChange(lang.id, "des", e.target.value)
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -318,17 +317,66 @@ export default function Edit() {
         {/* SIDEBAR */}
         <div className="editor-sidebar">
           <div className="editor-card">
-            {sideFields.map((key) => (
-              <div
-                key={key}
-                className={`form-group ${
-                  toggleFields.includes(key) ? "c-active" : ""
-                }`}
-              >
-                <label>{fieldLabels[key] || key}</label>
-                {renderField(key)}
+            {fieldMap.hinhanh && (
+              <div className="form-group">
+                <label>Ảnh đại diện</label>
+                <UploadImage
+                  currentImage={form.hinhanh}
+                  onChange={(file) => {
+                    setFileMap((p) => ({ ...p, hinhanh: file }));
+                    handleChange("hinhanh", file.name);
+                  }}
+                />
               </div>
-            ))}
+            )}
+            {fieldMap.multi_images && (
+              <div className="form-group">
+                <label>Ảnh liên quan (upload nhiều hình cùng lúc)</label>
+                <UploadMultipleImages
+                  images={gallery}
+                  setImages={setGallery}
+                  setDeletedIds={setDeletedGallery}
+                />
+              </div>
+            )}
+            {fieldMap.category && (
+              <div className="form-group">
+                <label>Danh mục</label>
+                <div className="cat-tree">{renderTree(categories)}</div>
+              </div>
+            )}
+            {fieldMap.price && (
+              <div className="form-group">
+                <label>Giá</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={
+                    form.price ? Number(form.price).toLocaleString("vi-VN") : ""
+                  }
+                  onChange={(e) =>
+                    handleChange("price", e.target.value.replace(/\D/g, ""))
+                  }
+                />
+              </div>
+            )}
+            {fieldMap.priceold && (
+              <div className="form-group">
+                <label>Giá cũ</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={
+                    form.priceold
+                      ? Number(form.priceold).toLocaleString("vi-VN")
+                      : ""
+                  }
+                  onChange={(e) =>
+                    handleChange("priceold", e.target.value.replace(/\D/g, ""))
+                  }
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

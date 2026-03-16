@@ -13,7 +13,7 @@ import Footer from "./pages/Footer/Index";
 import FooterEdit from "./pages/Footer/Edit";
 import InfoEdit from "./pages/Infos/Edit";
 import Language from "./pages/Languages/List";
-
+import Contact from "./pages/Contact/List";
 import AdminLayout from "./pages/layouts/AdminLayout";
 import DynamicModule from "./pages/Modules/DynamicModule";
 import Category from "./pages/Category/List";
@@ -33,40 +33,44 @@ function App() {
 
   return (
     <Routes>
+      {/* ===== ROOT ===== */}
+      <Route
+        path="/"
+        element={<Navigate to={isLogin ? "/dashboard" : "/login"} replace />}
+      />
+
       {/* ===== AUTH ===== */}
       <Route path="/login" element={<Login />} />
       <Route path="/forgot" element={<ForgotPassword />} />
 
       {/* ===== ADMIN ===== */}
       <Route
-        path="/"
         element={isLogin ? <AdminLayout /> : <Navigate to="/login" replace />}
       >
-        <Route index element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
 
-        <Route path="infos" element={<Configs />} />
-        <Route path="infos/edit/:id" element={<InfoEdit />} />
+        <Route path="/infos" element={<Configs />} />
+        <Route path="/infos/edit/:id" element={<InfoEdit />} />
 
-        <Route path="component" element={<Component />} />
-        <Route path="component/edit/:component" element={<ComponentEdit />} />
+        <Route path="/component" element={<Component />} />
+        <Route path="/component/edit/:component" element={<ComponentEdit />} />
 
-        <Route path="fields" element={<Field />} />
-        {/* <Route path="fields/edit/:id" element={<FieldEdit />} /> */}
+        <Route path="/fields" element={<Field />} />
 
-        <Route path="menu" element={<Menu />} />
+        <Route path="/menu" element={<Menu />} />
 
-        <Route path="footer" element={<Footer />} />
-        <Route path="footer/edit/:id" element={<FooterEdit />} />
+        <Route path="/footer" element={<Footer />} />
+        <Route path="/footer/edit/:id" element={<FooterEdit />} />
 
-        <Route path="language" element={<Language />} />
-
+        <Route path="/language" element={<Language />} />
+        <Route path="/contact" element={<Contact />} />
         {/* ===== DYNAMIC MODULE ===== */}
-        <Route path=":module/category" element={<Category />} />
-        <Route path=":module/category/create" element={<CategoryCreate />} />
+        <Route path="/:module/category" element={<Category />} />
+        <Route path="/:module/category/create" element={<CategoryCreate />} />
         <Route path="/:module/category/edit/:id" element={<CategoryEdit />} />
-        <Route path=":module/create" element={<Create />} />
-        <Route path=":module/edit/:id" element={<Edit />} />
-        <Route path=":module" element={<DynamicModuleWrapper />} />
+        <Route path="/:module/create" element={<Create />} />
+        <Route path="/:module/edit/:id" element={<Edit />} />
+        <Route path="/:module" element={<DynamicModuleWrapper />} />
       </Route>
     </Routes>
   );

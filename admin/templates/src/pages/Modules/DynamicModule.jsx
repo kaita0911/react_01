@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import Pagination from "@/pages/components/Pagination";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import { API_URL } from "@/config";
@@ -29,32 +29,92 @@ function SortableRow({ item, children }) {
 export default function DynamicModule() {
   const { module } = useParams();
   const navigate = useNavigate();
-  const [comp, setComp] = useState(null);
 
   const [articles, setArticles] = useState([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const limit = 35;
   const totalPage = Math.ceil(total / limit);
+
+  const [languages, setLanguages] = useState([]);
+  const [activeTab, setActiveTab] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editValue, setEditValue] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [fields, setFields] = useState([]);
+  ////update name
+  const saveName = async (id) => {
+    const fd = new FormData();
+
+    fd.append("id", id);
+    fd.append("languageid", activeTab);
+    fd.append("name", editValue);
+
+    const res = await fetch("/api/admin/articlelist.php?act=update_name", {
+      method: "POST",
+      body: fd,
+    });
+
+    const data = await res.json();
+
+    if (data.status) {
+      setArticles((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                names: {
+                  ...item.names,
+                  [activeTab]: editValue,
+                },
+              }
+            : item
+        )
+      );
+    }
+
+    setEditingId(null);
+  };
   /* ================= LOAD COMPONENT ================= */
 
   useEffect(() => {
-    if (!module) return;
-
-    const loadComp = async () => {
-      const res = await fetch(
+    const loadData = async () => {
+      const resModule = await fetch(
         `/api/admin/component.php?act=comp&module=${module}`
       );
-      const data = await res.json();
+      const comp = await resModule.json();
 
-      if (data.status) {
-        setComp(data.data);
+      if (!comp.status) return;
+
+      const compId = comp.data;
+
+      const [fieldsRes, langRes] = await Promise.all([
+        fetch(
+          `/api/admin/component_fields.php?act=list&component=${compId}&target=article`
+        ),
+        fetch(`/api/admin/language.php?act=list`),
+      ]);
+
+      const fieldData = await fieldsRes.json();
+      const langData = await langRes.json();
+
+      if (fieldData.status) setFields(fieldData.data);
+      if (langData.status) {
+        const activeLang = langData.data.filter((l) => l.active == 1);
+        setLanguages(activeLang);
+        if (activeLang.length) setActiveTab(activeLang[0].id);
       }
+      setLoading(false);
     };
 
-    loadComp();
+    loadData();
   }, [module]);
-
+  /* ================= FIELD SPLIT ================= */
+  const fieldMap = useMemo(() => {
+    const map = {};
+    fields.forEach((f) => (map[f.name] = f));
+    return map;
+  }, [fields]);
   // ===== LOAD DATA =====
   const loadData = useCallback(() => {
     if (!module) return;
@@ -65,7 +125,7 @@ export default function DynamicModule() {
       .then((res) => res.json())
       .then((result) => {
         // //console.log("API items:", result.data.length); // 👈 thêm dòng này
-        console.log("API RESULT:", result); // 👈 thêm dòng này
+
         if (result.status) {
           setArticles(result.data || []);
           setTotal(result.total || 0);
@@ -76,11 +136,28 @@ export default function DynamicModule() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+  ////update image
+  const handleImageUpload = async (id, file) => {
+    const fd = new FormData();
 
-  // // reset page khi đổi module
-  // useEffect(() => {
-  //   setPage(1);
-  // }, [module]);
+    fd.append("id", id);
+    fd.append("image", file);
+    fd.append("module", module);
+    const res = await fetch("/api/admin/articlelist.php?act=update_image", {
+      method: "POST",
+      body: fd,
+    });
+
+    const data = await res.json();
+
+    if (data.status) {
+      setArticles((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, img_thumb_vn: data.image } : item
+        )
+      );
+    }
+  };
   // ================= DELETE =================
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
@@ -158,7 +235,7 @@ export default function DynamicModule() {
       console.error(error);
     }
   };
-
+  if (loading) return <div>Loading...</div>;
   // ================= TOGGLE ACTIVE =================
   const handleToggle = async (id, column, currentValue) => {
     const newValue = Number(currentValue) === 1 ? 0 : 1;
@@ -176,7 +253,6 @@ export default function DynamicModule() {
       });
 
       const result = await res.json();
-      console.log(result);
 
       if (result.success) {
         setArticles((prev) =>
@@ -232,9 +308,6 @@ export default function DynamicModule() {
       body: formData,
     });
   };
-  const hasNew = comp?.new == 1;
-  const hasHot = comp?.hot == 1;
-  const hasMostView = comp?.mostview == 1;
   return (
     <>
       <main>
@@ -255,7 +328,20 @@ export default function DynamicModule() {
           </button>
         </div>
       </main>
-      <div className="module-page">
+      <div className="page-editor">
+        {languages.length > 1 && (
+          <div className="lang-tabs-header list">
+            {languages.map((lang) => (
+              <button
+                key={lang.id}
+                className={`lang-btn ${activeTab === lang.id ? "active" : ""}`}
+                onClick={() => setActiveTab(lang.id)}
+              >
+                {lang.name}
+              </button>
+            ))}
+          </div>
+        )}
         <DndContext
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
@@ -277,13 +363,11 @@ export default function DynamicModule() {
                 <th className="col-order txt-center">Thứ tự</th>
                 <th className="col-img txt-center">Hình</th>
                 <th>Tên</th>
-
-                {hasNew && <th className="col-status txt-center">Mới</th>}
-                {hasHot && <th className="col-status txt-center">Hot</th>}
-                {hasMostView && (
+                {fieldMap.new && <th className="col-status txt-center">Mới</th>}
+                {fieldMap.hot && <th className="col-status txt-center">Hot</th>}
+                {fieldMap.mostview && (
                   <th className="col-status txt-center">Most View</th>
                 )}
-
                 <th className="col-status txt-center">Active</th>
                 <th className="txt-center">Action</th>
               </tr>
@@ -309,17 +393,65 @@ export default function DynamicModule() {
 
                           <td className="txt-center">{item.num}</td>
                           <td className="txt-center">
-                            {item.img_thumb_vn && (
-                              <img
-                                className="img-thumbs"
-                                src={API_URL + `/${item.img_thumb_vn}`}
-                                alt={item.name}
-                              />
+                            {fieldMap.hinhanh && (
+                              <label className="img-edit">
+                                <input
+                                  type="file"
+                                  hidden
+                                  onChange={(e) =>
+                                    handleImageUpload(
+                                      item.id,
+                                      e.target.files[0]
+                                    )
+                                  }
+                                />
+
+                                {item.img_thumb_vn ? (
+                                  <>
+                                    <img
+                                      className="img-thumbs"
+                                      src={API_URL + item.img_thumb_vn}
+                                      alt=""
+                                    />
+                                    <div className="img-overlay">
+                                      <i className="fa-solid fa-camera"></i>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="img-placeholder">
+                                    <i className="fa-solid fa-camera"></i>
+                                  </div>
+                                )}
+                              </label>
                             )}
                           </td>
-                          <td>{item.name}</td>
-
-                          {hasNew && (
+                          <td>
+                            <div className="cat-name">
+                              {editingId === item.id ? (
+                                <input
+                                  className="inline-input"
+                                  value={editValue}
+                                  autoFocus
+                                  onChange={(e) => setEditValue(e.target.value)}
+                                  onBlur={() => saveName(item.id)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") saveName(item.id);
+                                  }}
+                                />
+                              ) : (
+                                <span
+                                  className="inline-text"
+                                  onClick={() => {
+                                    setEditingId(item.id);
+                                    setEditValue(item.names?.[activeTab] || "");
+                                  }}
+                                >
+                                  {item.names?.[activeTab] || "-"}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          {fieldMap.new && (
                             <td className="txt-center">
                               <label className="switch">
                                 <input
@@ -333,7 +465,7 @@ export default function DynamicModule() {
                               </label>
                             </td>
                           )}
-                          {hasHot && (
+                          {fieldMap.hot && (
                             <td className="txt-center">
                               <label className="switch">
                                 <input
@@ -347,7 +479,7 @@ export default function DynamicModule() {
                               </label>
                             </td>
                           )}
-                          {hasMostView && (
+                          {fieldMap.mostview && (
                             <td className="txt-center">
                               <label className="switch">
                                 <input
@@ -365,6 +497,7 @@ export default function DynamicModule() {
                               </label>
                             </td>
                           )}
+
                           <td className="txt-center">
                             <label className="switch">
                               <input

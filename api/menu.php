@@ -1,4 +1,5 @@
 <?php
+
 header("Content-Type: application/json; charset=utf-8");
 header("Access-Control-Allow-Origin: *");
 
@@ -20,7 +21,7 @@ $categoryTree = getCategoryTree($sp, $db_sp, $langid);
 
 $sql = "SELECT m.id, m.comp,
                d.name AS name_detail,
-               d.unique_key,
+               d.slug,
                m.has_sub
         FROM {$db_sp}.menu AS m
         LEFT JOIN {$db_sp}.menu_detail AS d

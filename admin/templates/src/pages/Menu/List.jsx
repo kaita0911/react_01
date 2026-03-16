@@ -135,7 +135,7 @@ export default function Menu() {
     const detail = editItem.details?.[lang] || {};
 
     formData.append("name", detail.name || "");
-    formData.append("unique_key", detail.unique_key || "");
+    formData.append("slug", detail.slug || "");
     formData.append("languageid", lang);
 
     const act = isEdit ? "update" : "add";
@@ -204,7 +204,7 @@ export default function Menu() {
       details: {
         [lang]: {
           name: "",
-          unique_key: "",
+          slug: "",
         },
       },
     });
@@ -299,7 +299,7 @@ export default function Menu() {
     } else {
       // Link nội bộ theo slug
       const detail = menu.details?.[lang];
-      const slug = detail?.unique_key || menu.id;
+      const slug = detail?.slug || menu.id;
 
       url = `/${slug}`;
     }
@@ -362,7 +362,7 @@ export default function Menu() {
                 const detail = menu.details?.[lang];
                 const name = detail?.name || "Menu";
                 const link =
-                  menu.link_out || `${detail?.unique_key || "page-" + menu.id}`;
+                  menu.link_out || `${detail?.slug || "page-" + menu.id}`;
 
                 return (
                   <SortableRow key={menu.id} menu={menu}>
@@ -463,20 +463,20 @@ export default function Menu() {
                     [lang]: {
                       ...prev.details?.[lang],
                       name: newName,
-                      unique_key: autoSlug
+                      slug: autoSlug
                         ? slugify(newName)
-                        : prev.details?.[lang]?.unique_key,
+                        : prev.details?.[lang]?.slug,
                     },
                   },
                 }));
               }}
             />
 
-            {/* ===== SLUG = unique_key ===== */}
+            {/* ===== SLUG = slug ===== */}
             <label>Slug</label>
             <input
               type="text"
-              value={editItem.details?.[lang]?.unique_key || ""}
+              value={editItem.details?.[lang]?.slug || ""}
               onChange={(e) => {
                 setAutoSlug(false); // 👈 user sửa tay
 
@@ -486,7 +486,7 @@ export default function Menu() {
                     ...prev.details,
                     [lang]: {
                       ...prev.details?.[lang],
-                      unique_key: e.target.value,
+                      slug: e.target.value,
                     },
                   },
                 }));

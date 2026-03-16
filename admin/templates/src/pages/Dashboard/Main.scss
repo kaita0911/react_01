@@ -226,6 +226,15 @@
 
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
 
+    .badge-contact {
+        background: red;
+        color: white;
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 10px;
+        margin-left: 6px;
+    }
+
     .header-left h3 {
         margin: 0;
         font-weight: 700;
@@ -497,6 +506,9 @@
 
     tbody {
         tr {
+            &.contact-unread {
+                font-weight: 600;
+            }
 
             /* Zebra */
             &:nth-child(even) {

@@ -1,22 +1,3 @@
-// import Sidebar from "../components/Sidebar";
-// import { Outlet } from "react-router-dom";
-// import Header from "../components/Header";
-// export default function AdminLayout() {
-//   return (
-//     <div className="admin-layout">
-//       <Sidebar />
-
-//       <div className="main">
-//         <Header />
-
-//         <div className="content">
-//           <Outlet />
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
 import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
 

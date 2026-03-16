@@ -33,11 +33,6 @@ export default function CategoryCreate() {
       const compData = await compRes.json();
       const langData = await langRes.json();
 
-      // const compRes = await fetch(
-      //   `/api/admin/component.php?act=comp&module=${module}`
-      // );
-      // const compData = await compRes.json();
-
       if (!compData.status) return;
       const comp = compData.data;
       setCompId(comp);
@@ -121,6 +116,18 @@ export default function CategoryCreate() {
   /* ================= CREATE ================= */
 
   const handleCreate = async () => {
+    const defaultLang = languages[0]; // ngôn ngữ mặc định
+    const name = form.languages?.[defaultLang.id]?.name;
+    if (!name || name.trim() === "") {
+      setActiveTab(defaultLang.id);
+
+      setTimeout(() => {
+        document.querySelector("input")?.focus();
+      }, 100);
+
+      return; // không cho lưu
+    }
+
     const fd = new FormData();
 
     fd.append("comp", compId);
@@ -254,7 +261,7 @@ export default function CategoryCreate() {
             )}
 
             <div className="form-group">
-              <label>Danh mục cha</label>
+              <label>Danh mục</label>
               <div className="cat-tree">{renderTree(categories)}</div>
             </div>
           </div>

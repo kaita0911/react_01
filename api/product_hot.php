@@ -1,4 +1,5 @@
 <?php
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -21,7 +22,7 @@ SELECT
     a.id,
     a.img_thumb_vn,
     d.name,
-    d.unique_key as slug,
+    d.slug as slug,
 
     COALESCE(
         NULLIF(p.price, 0),
@@ -74,7 +75,7 @@ $articles = $GLOBALS['sp']->getAll($sql);
 
 //         // Thêm link và image full path (khuyên dùng)
 //         $item['image'] = $config['BASE_URL'] . '/' . ltrim($item['img_thumb_vn'], '/');
-//         $item['slug']  = $item['unique_key'];
+//         $item['slug']  = $item['slug'];
 //     }
 // }
 
