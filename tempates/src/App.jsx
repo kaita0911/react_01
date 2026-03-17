@@ -2,7 +2,7 @@
 // import reactLogo from './assets/react.svg'
 // import viteLogo from '/vite.svg'
 // import './App.css'
-
+import { useEffect } from "react";
 import Resolver from "./router/Resolver";
 import HtmlRouter from "./router/HtmlRouter";
 import { Routes, Route } from "react-router-dom";
@@ -21,6 +21,14 @@ import { WishlistProvider } from "@/context/WishlistContext";
 import Wishlist from "./pages/Wishlist";
 
 function App() {
+  useEffect(() => {
+    const visited = sessionStorage.getItem("visited");
+
+    if (!visited) {
+      fetch("/api/visit.php");
+      sessionStorage.setItem("visited", "1");
+    }
+  }, []);
   return (
     <>
       <WishlistProvider>

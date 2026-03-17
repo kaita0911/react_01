@@ -19,8 +19,31 @@ require_once("../../includes/config.php");
 $act = isset($_GET['act']) ? $_GET['act'] : '';
 
 switch ($act) {
+    case "latest":
 
-    /* ================= COUNT ================= */
+        $sql = "
+        SELECT 
+            o.id,o.order_code,
+            o.name,
+            o.status,
+            SUM(ol.tamtinh) as total
+        FROM {$GLOBALS['db_sp']}.orders o
+        LEFT JOIN {$GLOBALS['db_sp']}.orders_line ol
+            ON o.id = ol.order_id
+        GROUP BY o.id
+        ORDER BY o.id DESC
+        LIMIT 5
+        ";
+
+        $rs = $GLOBALS['sp']->getAll($sql);
+
+        echo json_encode([
+            "status" => true,
+            "data" => $rs
+        ]);
+
+        break;
+        /* ================= COUNT ================= */
     case "count":
 
         $sql = "SELECT COUNT(*) as total
@@ -58,7 +81,8 @@ switch ($act) {
 
         $page  = isset($_GET['page']) ? intval($_GET['page']) : 1;
         $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 20;
-
+        $keyword = isset($_GET['keyword']) ? trim($_GET['keyword']) : '';
+        $status  = isset($_GET['status']) ? $_GET['status'] : '';
         if ($page <= 0) {
             $page = 1;
         }
@@ -67,7 +91,18 @@ switch ($act) {
         }
 
         $offset = ($page - 1) * $limit;
+        /* ===== WHERE ===== */
+        $where = "WHERE 1";
 
+        if ($keyword != '') {
+            $keyword = addslashes($keyword);
+            $where .= " AND (o.name LIKE '%$keyword%' OR o.phone LIKE '%$keyword%' OR o.id LIKE '%$keyword%')";
+        }
+
+        if ($status !== '') {
+            $where .= " AND o.status = '" . intval($status) . "'";
+        }
+        /* ===== total ===== */
         $sqlTotal = "SELECT COUNT(*) as total
                      FROM {$GLOBALS['db_sp']}.orders";
 
@@ -80,6 +115,7 @@ switch ($act) {
         FROM {$GLOBALS['db_sp']}.orders o
         LEFT JOIN {$GLOBALS['db_sp']}.orders_line ol
         ON o.id = ol.order_id
+        $where
         GROUP BY o.id
         ORDER BY o.id DESC
         LIMIT $offset,$limit";
@@ -174,9 +210,9 @@ switch ($act) {
         SELECT 
         COUNT(*) as total_orders,
         SUM(total_price) as revenue,
-        SUM(CASE WHEN status=0 THEN 1 ELSE 0 END) as pending,
-        SUM(CASE WHEN status=1 THEN 1 ELSE 0 END) as shipping,
-        SUM(CASE WHEN status=2 THEN 1 ELSE 0 END) as done
+        SUM(CASE WHEN status=0 THEN 1 ELSE 0 END) as Đang chờ,
+        SUM(CASE WHEN status=1 THEN 1 ELSE 0 END) as Đang giao,
+        SUM(CASE WHEN status=2 THEN 1 ELSE 0 END) as Hoàn thành
         FROM {$GLOBALS['db_sp']}.orders
         ";
 

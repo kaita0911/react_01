@@ -1,14 +1,24 @@
 import { Link, NavLink } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Sidebar({ modules }) {
   const [openMenu, setOpenMenu] = useState(null);
   const [open, setOpen] = useState(false);
-
+  const [infos, setInfos] = useState(null); // 👈 thêm
   const toggleMenu = (id) => {
     setOpenMenu(openMenu === id ? null : id);
   };
-
+  const userName = localStorage.getItem("admin_name") || "Admin";
+  const isAdmin = userName === "admin";
+  useEffect(() => {
+    fetch("/api/admin/infos.php?act=list") // sửa lại đúng API của bạn
+      .then((res) => res.json())
+      .then((res) => {
+        if (res.status) {
+          setInfos(res.data);
+        }
+      });
+  }, []);
   return (
     <aside className="sidebar">
       <h2 className="logo">ADMIN</h2>
@@ -49,7 +59,9 @@ export default function Sidebar({ modules }) {
             </div>
           );
         })}
-        <Link to="/cart">Đơn hàng</Link>
+        {infos?.find((item) => item.id == 12)?.active == 1 && (
+          <Link to="/cart">Đơn hàng</Link>
+        )}
         <Link to="/contact">Liên hệ</Link>
         {/* THÔNG TIN WEBSITE */}
         <div className="menu-parent">
@@ -60,15 +72,16 @@ export default function Sidebar({ modules }) {
 
           {open && (
             <div className="submenu">
-              <Link to="/language">Ngôn ngữ</Link>
-              <Link to="/component">Component</Link>
-              <Link to="/fields">Fields</Link>
+              {!isAdmin && <Link to="/language">Ngôn ngữ</Link>}
+              {!isAdmin && <Link to="/component">Component</Link>}
+              {!isAdmin && <Link to="/fields">Fields</Link>}
               <Link to="/menu">Menu trên</Link>
               <Link to="/footer">Footer</Link>
               <Link to="/infos">Cấu hình</Link>
             </div>
           )}
         </div>
+        <Link to="/dashboard">Dashboard</Link>
       </nav>
     </aside>
   );

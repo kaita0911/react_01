@@ -5,6 +5,8 @@ export default function General() {
   const [config, setConfig] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const userName = localStorage.getItem("admin_name") || "Admin";
+  const isAdmin = userName === "admin";
 
   // ================= TOGGLE ACTIVE =================
   const handleToggle = async (id, currentValue) => {
@@ -41,7 +43,8 @@ export default function General() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("/api/admin/infos.php?act=list", {
+        const act = isAdmin ? "list" : "list_kaita";
+        const res = await fetch(`/api/admin/infos.php?act=${act}`, {
           credentials: "include",
         });
 
@@ -68,9 +71,11 @@ export default function General() {
         <thead>
           <tr>
             <th className="col-order txt-center">Thứ tự</th>
-            <th className="col-order txt-center">ID</th>
+            {!isAdmin && <th className="col-order txt-center">ID</th>}
+
             <th>Tên</th>
-            <th className="col-status txt-center">Active</th>
+            {!isAdmin && <th className="col-status txt-center">Active</th>}
+
             <th className="col-actions txt-center">Action</th>
           </tr>
         </thead>
@@ -79,19 +84,21 @@ export default function General() {
           {config.map((item, index) => (
             <tr key={item.id}>
               <td className="txt-center">{index + 1}</td>
-              <td className="txt-center">{item.id}</td>
-              <td>{item.name_vn}</td>
+              {!isAdmin && <td className="txt-center">{item.id}</td>}
 
-              <td className="txt-center col-status">
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={item.active == 1}
-                    onChange={() => handleToggle(item.id, item.active)}
-                  />
-                  <span className="slider"></span>
-                </label>
-              </td>
+              <td>{item.name_vn}</td>
+              {!isAdmin && (
+                <td className="txt-center col-status">
+                  <label className="switch">
+                    <input
+                      type="checkbox"
+                      checked={item.active == 1}
+                      onChange={() => handleToggle(item.id, item.active)}
+                    />
+                    <span className="slider"></span>
+                  </label>
+                </td>
+              )}
 
               <td className="txt-center col-actions">
                 <div className="btn-actions">

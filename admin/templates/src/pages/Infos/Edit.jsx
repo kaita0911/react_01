@@ -45,9 +45,15 @@ export default function InfoEdit() {
 
   const fields = fieldById[id] || [];
   const labelMap = {
+    1: {
+      img_thumb_vn: "Hình ảnh",
+    },
     5: {
       domain: "Hotline",
       phone: "Zalo",
+    },
+    6: {
+      plain_text_vn: "Email",
     },
     8: {
       content_vn: "Nội dung",
@@ -101,7 +107,7 @@ export default function InfoEdit() {
 
   return (
     <main>
-      <div className="c-edit">
+      <div className="page-editor">
         <h2 className="edit-title">{data.name_vn}</h2>
 
         {fields.map((key) => (

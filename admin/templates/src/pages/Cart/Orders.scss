@@ -1,7 +1,3 @@
-.orders-page {
-    padding: 20px;
-}
-
 .filters {
     margin-bottom: 15px;
     display: flex;
@@ -12,52 +8,119 @@
     width: 100%;
     border-collapse: collapse;
     background: white;
+
+    th,
+    td {
+        border: 1px solid #eee;
+        padding: 10px;
+    }
+
+    .unread {
+        font-weight: 600;
+    }
+
+    .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+
+        /* Base button */
+        .btn {
+            border: none;
+            padding: 6px 10px;
+
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 500;
+
+            &:focus {
+                outline: none !important;
+            }
+
+            &.view {
+                background: #eef2ff;
+                color: #3b5bdb;
+
+                &:hover {
+                    background: #dbe4ff;
+                }
+            }
+
+            /* Pending */
+            &.pending {
+                background: #fff3cd;
+                color: #856404;
+
+                &:hover {
+                    background: #ffe69c;
+                }
+            }
+
+            /* Shipping */
+            &.ship {
+                background: #e7f1ff;
+                color: #0b5ed7;
+
+                &:hover {
+                    background: #d0e2ff;
+                }
+            }
+
+            /* Done */
+            &.done {
+                background: #e6f4ea;
+                color: #198754;
+
+                &:hover {
+                    background: #ccebd5;
+                }
+            }
+
+            /* Delete */
+            &.danger {
+                background: #fdecea;
+                color: #d93025;
+
+                &:hover {
+                    background: #f8d7da;
+                }
+            }
+        }
+    }
+
 }
 
-.orders-table th,
-.orders-table td {
-    border: 1px solid #eee;
-    padding: 10px;
-}
 
-.badge {
-    padding: 4px 8px;
-    border-radius: 4px;
-    color: white;
-    font-size: 12px;
-}
 
-.pending {
-    background: #faad14;
-}
 
-.shipping {
-    background: #1677ff;
-}
-
-.done {
-    background: #52c41a;
-}
-
-.actions button {
-    margin-right: 5px;
-    padding: 5px 8px;
-    cursor: pointer;
-}
-
-.actions .danger {
-    background: #ff4d4f;
-    color: white;
-    border: none;
-}
 
 /* ===== ORDER INFO ===== */
+
+
+.modal-header {
+    position: relative;
+
+    .btn-close-cart {
+        width: 27px;
+        height: 27px;
+        border-radius: 50%;
+        display: flex;
+        padding: 0;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #666;
+        font-size: 12px;
+        position: absolute;
+        right: 0;
+        top: -7px;
+    }
+}
 
 .order-info {
     background: #f8f9fb;
     border-radius: 8px;
     padding: 14px;
-    margin-bottom: 20px;
 
     .info-item {
         margin-bottom: 6px;
@@ -90,6 +153,7 @@
         th {
             text-align: left;
             padding: 10px;
+            font-weight: 500;
             border-bottom: 1px solid #e5e5e5;
         }
     }
@@ -116,5 +180,75 @@
             color: #e53935;
             font-size: 16px;
         }
+    }
+}
+
+.filters {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    background: #fff;
+    padding: 13px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    margin-bottom: 16px;
+
+    /* input + select */
+    input,
+    select {
+        height: 38px;
+        padding: 0 12px;
+        border: 1px solid #dcdcdc;
+        border-radius: 6px;
+        outline: none;
+        transition: all 0.2s ease;
+
+        /* focus effect */
+        &:focus {
+            border-color: var(--primary-gradient);
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.15);
+        }
+    }
+
+    /* button */
+    button {
+        height: 38px;
+        padding: 0 16px;
+        border: none;
+        border-radius: 6px;
+        background: var(--primary-gradient);
+        color: #fff;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        /* hover button */
+        &:hover {
+            background: #cf1322;
+        }
+    }
+}
+
+
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #333;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 6px;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
     }
 }

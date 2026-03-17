@@ -18,6 +18,24 @@ require_once("../../includes/config.php");
 $act = isset($_GET['act']) ? $_GET['act'] : '';
 
 switch ($act) {
+    case "latest":
+
+        $sql = "
+        SELECT id, name, message
+        FROM {$GLOBALS['db_sp']}.contact
+        WHERE is_read = 0
+        ORDER BY id DESC
+        LIMIT 4
+        ";
+
+        $rs = $GLOBALS['sp']->getAll($sql);
+
+        echo json_encode([
+            "status" => true,
+            "data" => $rs
+        ]);
+
+        break;
     case "mark_read":
 
         $id = isset($_POST['id']) ? intval($_POST['id']) : 0;

@@ -1,4 +1,5 @@
 <?php
+
 header("Content-Type: application/json; charset=utf-8");
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
@@ -130,7 +131,7 @@ $orderData = [
     'cart' => $products
 ];
 
-sendOrderEmails($orderData, $config['BASE_URL']);
+//sendOrderEmails($orderData, $config['BASE_URL']);
 
 // ====== Trả kết quả ======
 ob_clean();
