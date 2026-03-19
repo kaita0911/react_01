@@ -1,5 +1,4 @@
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
-
 import Login from "./pages/Login/Login";
 import ForgotPassword from "./pages/Login/ForgotPassword";
 
@@ -22,22 +21,17 @@ import CategoryCreate from "./pages/Category/Create";
 import CategoryEdit from "./pages/Category/Edit";
 import Create from "./pages/Modules/Create";
 import Edit from "./pages/Modules/Edit";
-
+import ProtectedRoute from "./pages/components/ProtectedRoute";
 // ===== WRAPPER RESET MODULE =====
 function DynamicModuleWrapper() {
   return <Outlet />;
 }
 
 function App() {
-  const isLogin = !!localStorage.getItem("admin_token");
-
   return (
     <Routes>
-      {/* ===== ROOT ===== */}
-      <Route
-        path="/"
-        element={<Navigate to={isLogin ? "/dashboard" : "/login"} replace />}
-      />
+      {/* Root */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
       {/* ===== AUTH ===== */}
       <Route path="/login" element={<Login />} />
@@ -45,7 +39,11 @@ function App() {
 
       {/* ===== ADMIN ===== */}
       <Route
-        element={isLogin ? <AdminLayout /> : <Navigate to="/login" replace />}
+        element={
+          <ProtectedRoute>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
       >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/infos" element={<Configs />} />
@@ -60,12 +58,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/cart" element={<Cart />} />
         {/* ===== DYNAMIC MODULE ===== */}
-        {/* <Route path="/:module/category" element={<Category />} />
-        <Route path="/:module/category/create" element={<CategoryCreate />} />
-        <Route path="/:module/category/edit/:id" element={<CategoryEdit />} />
-        <Route path="/:module/create" element={<Create />} />
-        <Route path="/:module/edit/:id" element={<Edit />} />
-        <Route path="/:module/*" element={<DynamicModuleWrapper />} /> */}
+
         <Route path="/:module" element={<DynamicModuleWrapper />}>
           <Route path="category" element={<Category />} />
           <Route index element={<DynamicModule />} />

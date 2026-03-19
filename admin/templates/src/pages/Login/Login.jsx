@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+
 //import { API_URL } from "@/config";
 import "./Login.scss";
 
@@ -9,27 +10,36 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  // ⭐ Nếu đã login, mở /login thì auto redirect
+  useEffect(() => {
+    const token = localStorage.getItem("admin_token");
+    if (token) navigate("/dashboard", { replace: true });
+  }, [navigate]);
+
   const handleLogin = async () => {
-    const res = await fetch(`/api/admin/login.php`, {
-      method: "POST",
+    try {
+      const res = await fetch(`/api/admin/login.php`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ username, password }),
+      });
 
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include", // ⭐ CỰC KỲ QUAN TRỌNG
-      body: JSON.stringify({
-        username,
-        password,
-      }),
-    });
+      const data = await res.json();
 
-    const data = await res.json();
-    if (data.status) {
-      localStorage.setItem("admin_token", "true");
-      localStorage.setItem("admin_name", data.data.username); // ⭐ THÊM DÒNG NÀY
-      navigate("/");
-    } else {
-      setError("Sai tài khoản hoặc mật khẩu !");
+      if (data.status) {
+        // Lưu token và tên user
+        localStorage.setItem("admin_token", data.data.token || "true");
+        localStorage.setItem("admin_name", data.data.username);
+
+        // Redirect trực tiếp sang dashboard
+        navigate("/dashboard", { replace: true });
+      } else {
+        setError("Sai tài khoản hoặc mật khẩu !");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Có lỗi xảy ra, vui lòng thử lại !");
     }
   };
   return (
@@ -37,22 +47,26 @@ export default function Login() {
       <div className="login-page">
         <div className="login-card">
           <h2>Admin Login</h2>
-
-          <input
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          {error && <p className="login-error">{error}</p>}
-
-          <button onClick={handleLogin}>Login</button>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault(); // tránh reload page
+              handleLogin();
+            }}
+          >
+            <input
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            {error && <p className="login-error">{error}</p>}
+            <button type="submit">Login</button>
+          </form>
           <p className="forgot-link" onClick={() => navigate("/forgot")}>
             Quên mật khẩu?
           </p>
