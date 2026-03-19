@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useParams } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 
 import Login from "./pages/Login/Login";
 import ForgotPassword from "./pages/Login/ForgotPassword";
@@ -25,8 +25,7 @@ import Edit from "./pages/Modules/Edit";
 
 // ===== WRAPPER RESET MODULE =====
 function DynamicModuleWrapper() {
-  const { module } = useParams();
-  return <DynamicModule key={module} />;
+  return <Outlet />;
 }
 
 function App() {
@@ -58,15 +57,23 @@ function App() {
         <Route path="/footer" element={<Footer />} />
         <Route path="/footer/edit/:id" element={<FooterEdit />} />
         <Route path="/language" element={<Language />} />
-        <Route path="/contact" element={<Contact />} />{" "}
+        <Route path="/contact" element={<Contact />} />
         <Route path="/cart" element={<Cart />} />
         {/* ===== DYNAMIC MODULE ===== */}
-        <Route path="/:module/category" element={<Category />} />
+        {/* <Route path="/:module/category" element={<Category />} />
         <Route path="/:module/category/create" element={<CategoryCreate />} />
         <Route path="/:module/category/edit/:id" element={<CategoryEdit />} />
         <Route path="/:module/create" element={<Create />} />
         <Route path="/:module/edit/:id" element={<Edit />} />
-        <Route path="/:module" element={<DynamicModuleWrapper />} />
+        <Route path="/:module/*" element={<DynamicModuleWrapper />} /> */}
+        <Route path="/:module" element={<DynamicModuleWrapper />}>
+          <Route path="category" element={<Category />} />
+          <Route index element={<DynamicModule />} />
+          <Route path="category/create" element={<CategoryCreate />} />
+          <Route path="category/edit/:id" element={<CategoryEdit />} />
+          <Route path="create" element={<Create />} />
+          <Route path="edit/:id" element={<Edit />} />
+        </Route>
       </Route>
     </Routes>
   );

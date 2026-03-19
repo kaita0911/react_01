@@ -118,7 +118,9 @@ export default function CategoryList() {
     if (data.status) {
       setRows((prev) =>
         prev.map((item) =>
-          item.id === id ? { ...item, img_vn: data.image } : item
+          item.id === id
+            ? { ...item, img_vn: data.image + "?t=" + Date.now() }
+            : item
         )
       );
     }
@@ -146,7 +148,6 @@ export default function CategoryList() {
       const fieldData = await fieldsRes.json();
       const catData = await catRes.json();
       const langData = await langRes.json();
-
       if (fieldData.status) setFields(fieldData.data);
       if (catData.status) setRows(flatten(catData.data));
       if (langData.status) {
@@ -208,6 +209,8 @@ export default function CategoryList() {
     }
 
     setDeleteId(null);
+    setShowDeleteModal(false); // <-- thêm dòng này
+    setDeleteMode(null); // <-- tốt nhất cũng reset mode
   };
   // ===== XOÁ NHIỀU =====
   const toggleSelect = (id) => {
@@ -336,7 +339,18 @@ export default function CategoryList() {
       alert("Lỗi server");
     }
   };
+  ////XEM NHANH
 
+  const getPreviewLink = (item) => {
+    let slug = item.slug;
+
+    if (typeof slug === "object") {
+      slug = slug?.[activeTab] || Object.values(slug)[0];
+    }
+
+    if (!slug) return "#";
+    return `${window.location.origin}/${slug}/`;
+  };
   /* ================= RENDER ================= */
 
   return (
@@ -505,6 +519,16 @@ export default function CategoryList() {
                       </td>
                       <td className="col-actions txt-center">
                         <div className="btn-actions">
+                          <button
+                            className="btn-view act"
+                            onClick={() => {
+                              const url = getPreviewLink(item);
+                              console.log("PREVIEW URL:", url); // 👈 đặt ở đây
+                              window.open(url, "_blank");
+                            }}
+                          >
+                            <i className="fa-solid fa-eye"></i>
+                          </button>
                           <button
                             className="act btn-edit"
                             onClick={() =>

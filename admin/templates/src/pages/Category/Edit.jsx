@@ -16,7 +16,7 @@ export default function CategoryEdit() {
   const [fileMap, setFileMap] = useState({});
   const [activeTab, setActiveTab] = useState(null);
   const [selectedId, setSelectedId] = useState(0);
-
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     parent_id: 0,
     languages: {},
@@ -202,31 +202,37 @@ export default function CategoryEdit() {
   /* ================= UPDATE va add================= */
 
   const handleSave = async () => {
-    const fd = new FormData();
+    setSaving(true); // bắt đầu cập nhật
+    try {
+      const fd = new FormData();
 
-    fd.append("id", id);
-    fd.append("comp", compId);
-    fd.append("parent_id", form.parent_id);
-    fd.append("languages", JSON.stringify(form.languages));
+      fd.append("id", id);
+      fd.append("comp", compId);
+      fd.append("parent_id", form.parent_id);
+      fd.append("languages", JSON.stringify(form.languages));
 
-    for (const k in form) {
-      if (k !== "languages" && k !== "parent_id") {
-        fd.append(k, form[k]);
+      for (const k in form) {
+        if (k !== "languages" && k !== "parent_id") {
+          fd.append(k, form[k]);
+        }
       }
+
+      for (const k in fileMap) {
+        fd.append(k, fileMap[k]);
+      }
+
+      const res = await fetch("/api/admin/category.php?act=add", {
+        method: "POST",
+        body: fd,
+      });
+
+      const result = await res.json();
+
+      if (result.status) navigate(`/${module}/category`);
+      else alert("Lỗi cập nhật danh mục");
+    } finally {
+      setSaving(false); // kết thúc cập nhật
     }
-
-    for (const k in fileMap) {
-      fd.append(k, fileMap[k]);
-    }
-
-    const res = await fetch("/api/admin/category.php?act=add", {
-      method: "POST",
-      body: fd,
-    });
-
-    const result = await res.json();
-
-    if (result.status) navigate(`/${module}/category`);
   };
 
   /* ================= RENDER ================= */
@@ -234,8 +240,20 @@ export default function CategoryEdit() {
   return (
     <main className="page-editor">
       <div className="action-bar">
-        <button className="c-btn btn-save" onClick={handleSave}>
-          <i className="fa-regular fa-floppy-disk"></i> Cập nhật
+        <button
+          className="c-btn btn-save"
+          onClick={handleSave}
+          disabled={saving}
+        >
+          {saving ? (
+            <>
+              <i className="fa fa-spinner fa-spin"></i> Đang cập nhật...
+            </>
+          ) : (
+            <>
+              <i className="fa-regular fa-floppy-disk"></i> Cập nhật
+            </>
+          )}
         </button>
 
         <button className="c-btn btn-cancel" onClick={() => navigate(-1)}>

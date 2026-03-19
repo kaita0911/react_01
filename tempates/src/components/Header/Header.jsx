@@ -44,7 +44,7 @@ function Header() {
           <Link className="logo" to="/">
             {infos.logoHome && (
               <img
-                src={`${API_URL}${infos.logoHome.img_thumb_vn}`}
+                src={`${API_URL}/${infos.logoHome.img_thumb_vn}`}
                 alt={infos.logoHome.name_vn}
               />
             )}

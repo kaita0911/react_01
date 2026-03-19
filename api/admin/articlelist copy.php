@@ -1,0 +1,1089 @@
+<?php
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+// ================= CORS =================
+if (isset($_SERVER['HTTP_ORIGIN'])) {
+    header("Access-Control-Allow-Origin: " . $_SERVER['HTTP_ORIGIN']);
+    header("Access-Control-Allow-Credentials: true");
+}
+
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Content-Type: application/json; charset=UTF-8");
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
+require_once("../../includes/config.php");
+require_once("../../functions/function-api.php");
+
+$act = isset($_GET['act']) ? $_GET['act'] : 'list';
+
+/* ================= HELPER ================= */
+
+function jsonResponse($data)
+{
+    echo json_encode($data);
+    exit;
+}
+
+function getCompId($module)
+{
+
+    $comp = $GLOBALS['sp']->getRow("
+        SELECT id
+        FROM {$GLOBALS['db_sp']}.component
+        WHERE `do`=?
+        LIMIT 1
+    ", array($module));
+
+    if(!$comp) {
+        return 0;
+    }
+
+    return intval($comp['id']);
+}
+
+
+/* ================= SWITCH ================= */
+
+switch($act) {
+
+    /* ==========================================
+       LIST
+    ========================================== */
+
+    case "list":
+
+        $module = isset($_GET['module']) ? trim($_GET['module']) : '';
+        $page = isset($_GET['page']) ? intval($_GET['page']) : 1;
+        if($page < 1) {
+            $page = 1;
+        }
+
+        $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 30;
+        if($limit <= 0) {
+            $limit = 30;
+        }
+        if($limit > 200) {
+            $limit = 200;
+        }
+
+        $start = ($page - 1) * $limit;
+
+        if($module == '') {
+            jsonResponse([
+                "status" => false,
+                "message" => "Thiếu module"
+            ]);
+        }
+
+        $comp_id = getCompId($module);
+
+        if(!$comp_id) {
+            jsonResponse([
+                "status" => false,
+                "message" => "Module không tồn tại"
+            ]);
+        }
+
+        /* ================= TOTAL ================= */
+
+        $total = $GLOBALS['sp']->getOne("
+        SELECT COUNT(id)
+        FROM {$GLOBALS['db_sp']}.articlelist
+        WHERE comp=?
+        ", [$comp_id]);
+
+        /* ================= ARTICLE LIST ================= */
+
+        $rows = $GLOBALS['sp']->getAll("
+        SELECT id,num,img_thumb_vn,active,hot,mostview,new
+        FROM {$GLOBALS['db_sp']}.articlelist
+        WHERE comp=?
+        ORDER BY num DESC
+        LIMIT $start,$limit
+        ", [$comp_id]);
+
+        $data = [];
+
+        foreach($rows as $row) {
+
+            /* ===== lấy name đa ngôn ngữ ===== */
+
+            $rs = $GLOBALS['sp']->Execute("
+            SELECT languageid,name
+            FROM {$GLOBALS['db_sp']}.articlelist_detail
+            WHERE articlelist_id=?
+            ", [$row['id']]);
+
+            $names = [];
+
+            while(!$rs->EOF) {
+
+                $names[$rs->fields['languageid']] = $rs->fields['name'];
+
+                $rs->MoveNext();
+            }
+
+            $row['names'] = $names;
+
+            $data[] = $row;
+        }
+
+        jsonResponse([
+            "status" => true,
+            "data" => $data,
+            "total" => intval($total),
+            "limit" => $limit,
+            "page" => $page,
+            "totalPage" => ceil($total / $limit)
+        ]);
+
+        break;
+        /* =================================================
+                        UPDATE NAME LIST
+                     ================================================= */
+    case "update_name":
+
+        $id = $_POST["id"];
+        $lang = $_POST["languageid"];
+        $name = $_POST["name"];
+        $slug = slugify($name);
+        $GLOBALS['sp']->execute("
+                        UPDATE {$GLOBALS['db_sp']}.articlelist_detail
+                        SET name = ?, slug = ?
+                        WHERE articlelist_id = ?
+                        AND languageid = ?
+                        ", [$name,$slug,$id,$lang]);
+
+        echo json_encode([
+        "status" => true
+        ]);
+
+        exit;
+        /* =================================================
+   UPDATE IMAGE LIST
+================================================= */
+
+    case "update_image":
+        $module = isset($_POST['module']) ? trim($_POST['module']) : '';
+        $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+        $comp_id = getCompId($module);
+        if($id && isset($_FILES['image']) && $_FILES['image']['name'] != '') {
+
+
+            /* LẤY HÌNH CŨ */
+            $old = $GLOBALS['sp']->getOne("
+        SELECT img_thumb_vn
+        FROM {$GLOBALS['db_sp']}.articlelist
+        WHERE id=?
+        ", [$id]);
+
+            if ($old) {
+
+                $oldPath = $_SERVER['DOCUMENT_ROOT'].'/'.$old;
+
+                $realPath = realpath($oldPath);
+                $baseDir  = realpath($_SERVER['DOCUMENT_ROOT'].'/hinh-anh/');
+
+                if (
+                    $realPath &&
+                    $baseDir &&
+                    strpos($realPath, $baseDir) === 0 &&   // nằm trong hinh-anh
+                    is_file($realPath) &&                  // là file thật
+                    file_exists($realPath)                // tồn tại
+                ) {
+                    unlink($realPath);
+                }
+            }
+            $uploadFolder = 'hinh-anh/';
+            switch($comp_id) {
+                case 1:
+                    $uploadFolder .= 'tin-tuc/';
+                    break;
+
+                case 2:
+                    $uploadFolder .= 'thumbs/';
+                    break;
+                case 77:
+                    $uploadFolder .= 'banner/';
+                    break;
+
+                default:
+                    $uploadFolder .= 'thong-tin-chung/';
+            }
+            /* TẠO FILE NAME */
+
+            $uploadDir = $_SERVER['DOCUMENT_ROOT'].'/'.$uploadFolder;
+
+            if(!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+            $filename = time().'_'.rand(1000, 9999).'.'.$ext;
+
+            if(move_uploaded_file($_FILES['image']['tmp_name'], $uploadDir.$filename)) {
+
+                $image = $uploadFolder.$filename;
+
+                $GLOBALS['sp']->Execute("
+            UPDATE {$GLOBALS['db_sp']}.articlelist
+            SET img_thumb_vn=?
+            WHERE id=?
+            ", [$image,$id]);
+
+                echo json_encode([
+                    "status" => true,
+                    "image" => $image
+                ]);
+                exit;
+            }
+        }
+
+        echo json_encode([
+            "status" => false
+        ]);
+
+        exit;
+        /* ==========================================
+           ADD
+        ========================================== */
+
+    case "add":
+
+        $module = isset($_POST['module']) ? trim($_POST['module']) : '';
+        $active = isset($_POST['active']) ? intval($_POST['active']) : 1;
+        $new = isset($_POST['new']) ? intval($_POST['new']) : 1;
+        $hot = isset($_POST['hot']) ? intval($_POST['hot']) : 1;
+        $mostview = isset($_POST['mostview']) ? intval($_POST['mostview']) : 1;
+        $price = isset($_POST['price']) ? intval($_POST['price']) : '';
+        $priceold = isset($_POST['priceold']) ? intval($_POST['priceold']) : '';
+        $languages = isset($_POST['languages']) ? json_decode($_POST['languages'], true) : [];
+        $category_id = isset($_POST['parent_id']) ? intval($_POST['parent_id']) : 0;
+        if($module == '' || empty($languages)) {
+            jsonResponse([
+                "status" => false,
+                "message" => "Thiếu dữ liệu"
+            ]);
+        }
+
+        $comp_id = getCompId($module);
+
+        if(!$comp_id) {
+            jsonResponse([
+                "status" => false,
+                "message" => "Module không tồn tại"
+            ]);
+        }
+        ///hình ảnh
+        $uploadFolder = 'hinh-anh/';
+
+        switch($comp_id) {
+            case 1:
+                $uploadFolder .= 'tin-tuc/';
+                break;
+
+            case 77:
+                $uploadFolder .= 'banner/';
+                break;
+
+            case 2:
+                $uploadFolder .= 'thumbs/';
+                break;
+
+            default:
+                $uploadFolder .= 'thong-tin-chung/';
+        }
+        $hinhanh = '';
+
+        if(isset($_FILES['hinhanh']) && $_FILES['hinhanh']['error'] == 0) {
+
+            $ext = pathinfo($_FILES['hinhanh']['name'], PATHINFO_EXTENSION);
+            $filename = time().'_'.rand(1000, 9999).'.'.$ext;
+
+            $uploadDir = $_SERVER['DOCUMENT_ROOT'].'/'.$uploadFolder;
+
+            if(!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            move_uploaded_file($_FILES['hinhanh']['tmp_name'], $uploadDir.$filename);
+
+            $hinhanh = $uploadFolder.$filename;
+        }
+        /* lấy num lớn nhất */
+        $maxNum = $GLOBALS['sp']->getOne("
+        SELECT MAX(num)
+        FROM {$GLOBALS['db_sp']}.articlelist
+        WHERE comp=?
+        ", array($comp_id));
+
+        $num = intval($maxNum) + 1;
+
+        /* insert articlelist */
+        $GLOBALS['sp']->Execute("
+            INSERT INTO {$GLOBALS['db_sp']}.articlelist
+            (comp,num,active,hot,new,mostview,img_thumb_vn)
+            VALUES(?,?,?,?,?,?,?)
+        ", array($comp_id,$num,$active,$hot,$new,$mostview,$hinhanh));
+
+        $id = $GLOBALS['sp']->Insert_ID();
+        /* lưu danh mục */
+        if($category_id > 0) {
+
+            $GLOBALS['sp']->Execute("
+            INSERT INTO {$GLOBALS['db_sp']}.articlelist_categories
+            (articlelist_id, categories_id)
+            VALUES (?,?)
+        ", [
+                $id,
+                $category_id
+            ]);
+
+        }
+        /* insert price nếu có nhập */
+
+        if($price !== '' || $priceold !== '') {
+
+            $GLOBALS['sp']->Execute("
+            INSERT INTO {$GLOBALS['db_sp']}.articlelist_price
+            (articlelist_id,price,priceold)
+            VALUES (?,?,?)
+        ", [
+                $id,
+                $price,
+                $priceold
+            ]);
+
+        }
+        /* upload gallery */
+        if(isset($_FILES['gallery'])) {
+
+            $uploadFolder = "hinh-anh/gallery/";
+            $uploadDir = $_SERVER['DOCUMENT_ROOT']."/".$uploadFolder;
+
+            if(!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            foreach($_FILES['gallery']['name'] as $k => $name) {
+
+                if($_FILES['gallery']['error'][$k] == 0) {
+
+                    $ext = pathinfo($name, PATHINFO_EXTENSION);
+                    $filename = time().'_'.$k.'_'.rand(1000, 9999).'.'.$ext;
+
+                    move_uploaded_file(
+                        $_FILES['gallery']['tmp_name'][$k],
+                        $uploadDir.$filename
+                    );
+
+                    $img = $uploadFolder.$filename;
+
+                    $num = isset($_POST['gallery_num'][$k])
+                    ? intval($_POST['gallery_num'][$k])
+                    : ($k + 1);
+
+                    $GLOBALS['sp']->Execute("
+                INSERT INTO gallery_sp
+                (articlelist_id,img_vn,num)
+                VALUES(?,?,?)
+                ", [
+                        $id,
+                        $img,
+                        $num
+                    ]);
+
+                }
+            }
+
+        }
+        /* insert detail theo language */
+        foreach($languages as $langid => $data) {
+
+            $name  = isset($data['name']) ? trim($data['name']) : '';
+            $slug  = isset($data['slug']) ? trim($data['slug']) : '';
+            $short = isset($data['short']) ? $data['short'] : '';
+            $content   = isset($data['content']) ? $data['content'] : '';
+            $keyword   = isset($data['keyword']) ? $data['keyword'] : '';
+            $des   = isset($data['des']) ? $data['des'] : '';
+
+            $GLOBALS['sp']->Execute("
+            INSERT INTO {$GLOBALS['db_sp']}.articlelist_detail
+            (articlelist_id,languageid,name,slug,short,content,keyword,des)
+            VALUES(?,?,?,?,?,?,?,?)
+        ", array(
+                $id,
+                $langid,
+                $name,
+                $slug,
+                $short,
+                $content,
+                $keyword,
+                $des
+            ));
+        }
+
+        jsonResponse([
+            "status" => true,
+            "id" => $id
+        ]);
+
+        break;
+        /* ==========================================
+   Detail
+        ========================================== */
+    case "detail":
+
+        $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+        if(!$id) {
+            jsonResponse([
+                "status" => false,
+                "message" => "Thiếu id"
+            ]);
+        }
+
+        /* lấy article */
+        $article = $GLOBALS['sp']->GetRow("
+            SELECT *
+            FROM {$GLOBALS['db_sp']}.articlelist
+            WHERE id=?
+            LIMIT 1
+        ", [$id]);
+
+        if(!$article) {
+            jsonResponse([
+                "status" => false,
+                "message" => "Không tìm thấy dữ liệu"
+            ]);
+        }
+        /* lấy gallery */
+        $gallery = $GLOBALS['sp']->getAll("
+        SELECT id,img_vn,num
+        FROM gallery_sp
+        WHERE articlelist_id=?
+        ORDER BY num ASC
+        ", [$id]);
+        /* lấy price */
+        $price = $GLOBALS['sp']->GetRow("
+            SELECT price, priceold
+            FROM {$GLOBALS['db_sp']}.articlelist_price
+            WHERE articlelist_id=?
+            LIMIT 1
+        ", [$id]);
+        if(!$price) {
+            $price = [
+                "price" => 0,
+                "priceold" => 0
+            ];
+        }
+        /* lấy detail đa ngôn ngữ */
+        $rs = $GLOBALS['sp']->Execute("
+            SELECT languageid,name,slug,short,content,keyword,des
+            FROM {$GLOBALS['db_sp']}.articlelist_detail
+            WHERE articlelist_id=?
+        ", [$id]);
+
+        $languages = [];
+
+        while(!$rs->EOF) {
+
+            $languages[$rs->fields['languageid']] = [
+                "name" => $rs->fields['name'],
+                "slug" => $rs->fields['slug'],
+                "short" => $rs->fields['short'],
+                "content" => $rs->fields['content'],
+                "keyword" => $rs->fields['keyword'],
+                "des" => $rs->fields['des']
+            ];
+
+            $rs->MoveNext();
+        }
+        $category = $GLOBALS['sp']->GetOne("
+            SELECT categories_id
+            FROM {$GLOBALS['db_sp']}.articlelist_categories
+            WHERE articlelist_id=?
+            LIMIT 1
+        ", [$id]);
+        jsonResponse([
+            "status" => true,
+            "data" => [
+                "parent_id" => $category,
+                "active" => $article['active'],
+                "hot" => $article['hot'],
+                "new" => $article['new'],
+                "mostview" => $article['mostview'],
+                "img_thumb_vn" => $article['img_thumb_vn'],
+                "languages" => $languages,
+                "price" => $price['price'],
+                "priceold" => $price['priceold'],
+                "gallery" => $gallery
+            ]
+        ]);
+
+        break;
+        /* ==========================================
+           UPDATE
+        ========================================== */
+
+    case "update":
+
+        $id = isset($_POST['id']) ? trim($_POST['id']) : '';
+        $category_id = isset($_POST['parent_id']) ? intval($_POST['parent_id']) : 0;
+        $module = isset($_POST['module']) ? trim($_POST['module']) : '';
+        $active = isset($_POST['active']) ? intval($_POST['active']) : 1;
+        $new = isset($_POST['new']) ? intval($_POST['new']) : 1;
+        $hot = isset($_POST['hot']) ? intval($_POST['hot']) : 1;
+        $mostview = isset($_POST['mostview']) ? intval($_POST['mostview']) : 1;
+        $price = isset($_POST['price']) ? intval($_POST['price']) : 0;
+        $priceold = isset($_POST['priceold']) ? intval($_POST['priceold']) : 0;
+        $languages = isset($_POST['languages']) ? json_decode($_POST['languages'], true) : [];
+
+        if(!$id) {
+            jsonResponse([
+                "status" => false,
+                "message" => "Thiếu id"
+            ]);
+        }
+
+        /* lấy comp */
+        $comp_id = getCompId($module);
+
+        if(!$comp_id) {
+            jsonResponse([
+                "status" => false,
+                "message" => "Module không tồn tại"
+            ]);
+        }
+
+        $GLOBALS['sp']->Execute("
+        DELETE FROM {$GLOBALS['db_sp']}.articlelist_categories
+        WHERE articlelist_id=?
+        ", [$id]);
+        if($category_id > 0) {
+
+            $GLOBALS['sp']->Execute("
+            INSERT INTO {$GLOBALS['db_sp']}.articlelist_categories
+            (articlelist_id,categories_id)
+            VALUES(?,?)
+            ", [
+                $id,
+                $category_id
+            ]);
+
+        }
+        /* lấy ảnh cũ */
+        $oldImage = $GLOBALS['sp']->getOne("
+    SELECT img_thumb_vn
+    FROM {$GLOBALS['db_sp']}.articlelist
+    WHERE id=?
+    ", [$id]);
+
+        $hinhanh = $oldImage;
+        ///////
+        $delete_gallery = isset($_POST['delete_gallery'])
+        ? json_decode($_POST['delete_gallery'], true)
+        : [];
+        if(!empty($delete_gallery)) {
+
+            foreach($delete_gallery as $gid) {
+
+                $row = $GLOBALS['sp']->GetRow("
+            SELECT img_vn
+            FROM gallery_sp
+            WHERE id=?
+            ", [$gid]);
+
+                if($row) {
+
+                    $oldPath = $_SERVER['DOCUMENT_ROOT']."/".$row['img_vn'];
+
+                    $realPath = realpath($oldPath);
+                    $baseDir  = realpath($_SERVER['DOCUMENT_ROOT'].'/hinh-anh/');
+
+                    if (
+                        $realPath &&
+                        $baseDir &&
+                        strpos($realPath, $baseDir) === 0 &&
+                        is_file($realPath)
+                    ) {
+                        unlink($realPath);
+                    }
+
+                }
+
+                $GLOBALS['sp']->Execute("
+            DELETE FROM gallery_sp
+            WHERE id=?
+            ", [$gid]);
+
+            }
+
+        }
+        /* upload ảnh mới */
+        $uploadFolder = 'hinh-anh/';
+        switch($comp_id) {
+            case 1:
+                $uploadFolder .= 'tin-tuc/';
+                break;
+
+            case 2:
+                $uploadFolder .= 'thumbs/';
+                break;
+            case 77:
+                $uploadFolder .= 'banner/';
+                break;
+
+            default:
+                $uploadFolder .= 'thong-tin-chung/';
+        }
+        if(isset($_FILES['hinhanh']) && $_FILES['hinhanh']['error'] == 0) {
+
+            $ext = pathinfo($_FILES['hinhanh']['name'], PATHINFO_EXTENSION);
+            $filename = time().'_'.rand(1000, 9999).'.'.$ext;
+
+            /* folder theo comp */
+
+
+            $uploadDir = $_SERVER['DOCUMENT_ROOT'].'/'.$uploadFolder;
+
+            if(!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            move_uploaded_file($_FILES['hinhanh']['tmp_name'], $uploadDir.$filename);
+
+            $hinhanh = $uploadFolder.$filename;
+
+            /* xoá ảnh cũ */
+            if($oldImage) {
+
+                $oldPath = $_SERVER['DOCUMENT_ROOT'].'/'.$oldImage;
+
+
+                $realPath = realpath($oldPath);
+                $baseDir  = realpath($_SERVER['DOCUMENT_ROOT'].'/hinh-anh/');
+
+                if (
+                    $realPath &&
+                    $baseDir &&
+                    strpos($realPath, $baseDir) === 0 &&
+                    is_file($realPath)
+                ) {
+                    unlink($realPath);
+                }
+
+            }
+
+        }
+        /* update vị trí gallery */
+        if(isset($_POST['gallery_update'])) {
+
+            foreach($_POST['gallery_update'] as $g) {
+
+                $g = json_decode($g, true);
+
+                $gid = $g['id'];
+                $num = $g['num'];
+
+                $GLOBALS['sp']->Execute("
+            UPDATE gallery_sp
+            SET num=?
+            WHERE id=?
+            ", [
+                    $num,
+                    $gid
+                ]);
+
+            }
+
+        }
+        /* upload gallery */
+        if(isset($_FILES['gallery'])) {
+
+            $uploadFolder = "hinh-anh/gallery/";
+            $uploadDir = $_SERVER['DOCUMENT_ROOT']."/".$uploadFolder;
+
+            if(!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+
+            foreach($_FILES['gallery']['name'] as $k => $name) {
+
+                if($_FILES['gallery']['error'][$k] == 0) {
+
+                    $ext = pathinfo($name, PATHINFO_EXTENSION);
+                    $filename = time().'_'.$k.'_'.rand(1000, 9999).'.'.$ext;
+
+                    move_uploaded_file(
+                        $_FILES['gallery']['tmp_name'][$k],
+                        $uploadDir.$filename
+                    );
+
+                    $img = $uploadFolder.$filename;
+
+                    /* lấy num từ react */
+                    $num = isset($_POST['gallery_new_num'][$k])
+                    ? intval($_POST['gallery_new_num'][$k])
+                    : ($k + 1);
+
+                    $GLOBALS['sp']->Execute("
+                INSERT INTO gallery_sp
+                (articlelist_id,img_vn,num)
+                VALUES(?,?,?)
+                ", [
+                        $id,
+                        $img,
+                        $num
+                    ]);
+
+                }
+
+            }
+        }
+
+        /* update price */
+        $exists = $GLOBALS['sp']->getOne("
+    SELECT COUNT(*)
+    FROM {$GLOBALS['db_sp']}.articlelist_price
+    WHERE articlelist_id=?
+    ", [$id]);
+
+        if($exists) {
+
+            $GLOBALS['sp']->Execute("
+        UPDATE {$GLOBALS['db_sp']}.articlelist_price
+        SET price=?, priceold=?
+        WHERE articlelist_id=?
+        ", [
+                $price,
+                $priceold,
+                $id
+            ]);
+
+        } else {
+
+            $GLOBALS['sp']->Execute("
+        INSERT INTO {$GLOBALS['db_sp']}.articlelist_price
+        (articlelist_id,price,priceold)
+        VALUES (?,?,?)
+        ", [
+                $id,
+                $price,
+                $priceold
+            ]);
+
+        }
+        /* update articlelist */
+        $GLOBALS['sp']->Execute("
+    UPDATE {$GLOBALS['db_sp']}.articlelist
+    SET active=?, img_thumb_vn=?, new=?,hot=?,mostview=?
+    WHERE id=?
+    ", [$active,$hinhanh,$new,$hot,$mostview,$id]);
+
+        /* update detail */
+        foreach($languages as $langid => $data) {
+
+            $name  = isset($data['name']) ? trim($data['name']) : '';
+            $slug  = isset($data['slug']) ? trim($data['slug']) : '';
+            $short = isset($data['short']) ? $data['short'] : '';
+            $content   = isset($data['content']) ? $data['content'] : '';
+            $keyword   = isset($data['keyword']) ? $data['keyword'] : '';
+            $des   = isset($data['des']) ? $data['des'] : '';
+
+            $GLOBALS['sp']->Execute("
+        UPDATE {$GLOBALS['db_sp']}.articlelist_detail
+        SET name=?,slug=?,short=?,content=?, keyword = ?, des=?
+        WHERE articlelist_id=? AND languageid=?
+        ", [
+                $name,
+                $slug,
+                $short,
+                $content,
+                $keyword,
+                $des,
+                $id,
+                $langid
+            ]);
+
+        }
+
+        jsonResponse([
+        "status" => true
+        ]);
+
+        break;
+
+        /* ==========================================
+           DELETE
+        ========================================== */
+
+    case "delete":
+
+        $id = intval($_POST['id']);
+
+        if($id <= 0) {
+            jsonResponse([
+                "status" => false,
+                "message" => "ID không hợp lệ"
+            ]);
+        }
+
+        /* lấy comp + ảnh */
+        $row = $GLOBALS['sp']->GetRow("
+        SELECT comp,img_thumb_vn
+        FROM {$GLOBALS['db_sp']}.articlelist
+        WHERE id=?
+        ", [$id]);
+
+        if(!$row) {
+            jsonResponse([
+                "status" => false,
+                "message" => "Item không tồn tại"
+            ]);
+        }
+
+        $comp_id = $row['comp'];
+        $image = $row['img_thumb_vn'];
+
+        /* xoá file ảnh */
+        if($image) {
+
+            $oldPath = $_SERVER['DOCUMENT_ROOT']."/".$image;
+
+
+            $realPath = realpath($oldPath);
+            $baseDir  = realpath($_SERVER['DOCUMENT_ROOT'].'/hinh-anh/');
+
+            if (
+                $realPath &&
+                $baseDir &&
+                strpos($realPath, $baseDir) === 0 &&
+                is_file($realPath)
+            ) {
+                unlink($realPath);
+            }
+
+        }
+        /* xoá gallery */
+        $rows = $GLOBALS['sp']->getAll("
+    SELECT img_vn
+    FROM gallery_sp
+    WHERE articlelist_id=?
+    ", [$id]);
+
+        foreach($rows as $r) {
+
+            $oldPath = $_SERVER['DOCUMENT_ROOT']."/".$r['img_vn'];
+
+
+            $realPath = realpath($oldPath);
+            $baseDir  = realpath($_SERVER['DOCUMENT_ROOT'].'/hinh-anh/');
+
+            if (
+                $realPath &&
+                $baseDir &&
+                strpos($realPath, $baseDir) === 0 &&
+                is_file($realPath)
+            ) {
+                unlink($realPath);
+            }
+        }
+
+        $GLOBALS['sp']->Execute("
+    DELETE FROM gallery_sp
+    WHERE articlelist_id=?
+    ", [$id]);
+        /* xoá price */
+        $GLOBALS['sp']->Execute("
+    DELETE FROM {$GLOBALS['db_sp']}.articlelist_price
+    WHERE articlelist_id=?
+    ", [$id]);
+        /* xoá detail */
+        $GLOBALS['sp']->Execute("
+       DELETE FROM {$GLOBALS['db_sp']}.articlelist_detail
+       WHERE articlelist_id=?
+   ", array($id));
+
+        /* xoá item */
+        $GLOBALS['sp']->Execute("
+        DELETE FROM {$GLOBALS['db_sp']}.articlelist
+        WHERE id=?
+    ", array($id));
+
+        /* rebuild num chỉ trong module đó */
+        $GLOBALS['sp']->Execute("SET @num := 0");
+
+        $GLOBALS['sp']->Execute("
+        UPDATE {$GLOBALS['db_sp']}.articlelist
+        SET num = (@num := @num + 1)
+        WHERE comp = ?
+        ORDER BY num ASC
+    ", array($comp_id));
+
+        jsonResponse([
+            "status" => true
+        ]);
+
+        break;
+
+        /* ==========================================
+           DELETE MULTI
+        ========================================== */
+
+    case "delete_multi":
+
+        $ids = isset($_POST['ids']) ? $_POST['ids'] : array();
+
+        if(!is_array($ids) || empty($ids)) {
+            jsonResponse([
+                "status" => false,
+                "message" => "Không có dữ liệu"
+            ]);
+        }
+
+        $comp_ids = [];
+
+        foreach($ids as $id) {
+
+            $id = intval($id);
+            if($id <= 0) {
+                continue;
+            }
+
+            /* lấy thông tin item */
+            $row = $GLOBALS['sp']->GetRow("
+            SELECT comp,img_thumb_vn
+            FROM {$GLOBALS['db_sp']}.articlelist
+            WHERE id=?
+        ", [$id]);
+
+            if(!$row) {
+                continue;
+            }
+
+            $comp_ids[$row['comp']] = $row['comp'];
+
+            /* xoá file ảnh */
+            if(!empty($row['img_thumb_vn'])) {
+
+                $oldPath = $_SERVER['DOCUMENT_ROOT'].'/'.$row['img_thumb_vn'];
+
+                $realPath = realpath($oldPath);
+                $baseDir  = realpath($_SERVER['DOCUMENT_ROOT'].'/hinh-anh/');
+
+                if (
+                    $realPath &&
+                    $baseDir &&
+                    strpos($realPath, $baseDir) === 0 &&
+                    is_file($realPath)
+                ) {
+                    unlink($realPath);
+                }
+
+            }
+            /* xoá gallery */
+            $rows = $GLOBALS['sp']->GetAll("
+        SELECT img_vn
+        FROM gallery_sp
+        WHERE articlelist_id=?
+        ", [$id]);
+
+            foreach($rows as $r) {
+
+                $oldPath = $_SERVER['DOCUMENT_ROOT']."/".$r['img_vn'];
+
+                $realPath = realpath($oldPath);
+                $baseDir  = realpath($_SERVER['DOCUMENT_ROOT'].'/hinh-anh/');
+
+                if (
+                    $realPath &&
+                    $baseDir &&
+                    strpos($realPath, $baseDir) === 0 &&
+                    is_file($realPath)
+                ) {
+                    unlink($realPath);
+                }
+
+            }
+
+            $GLOBALS['sp']->Execute("
+        DELETE FROM gallery_sp
+        WHERE articlelist_id=?
+        ", [$id]);
+            /* xoá price */
+            $GLOBALS['sp']->Execute("
+        DELETE FROM {$GLOBALS['db_sp']}.articlelist_price
+        WHERE articlelist_id=?
+        ", [$id]);
+            /* xoá detail   */
+            $GLOBALS['sp']->Execute("
+            DELETE FROM {$GLOBALS['db_sp']}.articlelist_detail
+            WHERE articlelist_id=?
+        ", [$id]);
+
+            /* xoá item */
+            $GLOBALS['sp']->Execute("
+            DELETE FROM {$GLOBALS['db_sp']}.articlelist
+            WHERE id=?
+        ", [$id]);
+        }
+
+        /* rebuild num theo từng module */
+        foreach($comp_ids as $comp) {
+
+            $GLOBALS['sp']->Execute("SET @num := 0");
+
+            $GLOBALS['sp']->Execute("
+            UPDATE {$GLOBALS['db_sp']}.articlelist
+            SET num = (@num := @num + 1)
+            WHERE comp=?
+            ORDER BY num ASC
+        ", [$comp]);
+
+        }
+
+        jsonResponse([
+            "status" => true
+        ]);
+
+        break;
+
+
+        /* ==========================================
+           REORDER
+        ========================================== */
+
+    case "reorder":
+
+        $ids = isset($_POST['id']) ? $_POST['id'] : array();
+        $nums = isset($_POST['num']) ? $_POST['num'] : array();
+
+        if(empty($ids) || empty($nums)) {
+            jsonResponse(array("status" => false));
+        }
+
+        for($i = 0;$i < count($ids);$i++) {
+
+            $id = intval($ids[$i]);
+            $num = intval($nums[$i]);
+
+            $GLOBALS['sp']->Execute("
+            UPDATE {$GLOBALS['db_sp']}.articlelist
+            SET num=?
+            WHERE id=?
+        ", array($num,$id));
+        }
+
+        jsonResponse(array("status" => true));
+
+        break;
+
+}

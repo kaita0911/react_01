@@ -97,8 +97,16 @@ switch ($act) {
                 if (!empty($oldImage)) {
                     $oldPath = __DIR__ . "/../../" . $oldImage;
 
-                    if (file_exists($oldPath)) {
-                        unlink($oldPath); // 👉 XOÁ ẢNH CŨ
+                    $realPath = realpath($oldPath);
+                    $baseDir  = realpath($_SERVER['DOCUMENT_ROOT'].'/hinh-anh/');
+
+                    if (
+                        $realPath &&
+                        $baseDir &&
+                        strpos($realPath, $baseDir) === 0 &&
+                        is_file($realPath)
+                    ) {
+                        unlink($realPath);
                     }
                 }
 

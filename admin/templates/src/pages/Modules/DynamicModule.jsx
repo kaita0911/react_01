@@ -83,7 +83,6 @@ export default function DynamicModule() {
         `/api/admin/component.php?act=comp&module=${module}`
       );
       const comp = await resModule.json();
-
       if (!comp.status) return;
 
       const compId = comp.data;
@@ -97,7 +96,6 @@ export default function DynamicModule() {
 
       const fieldData = await fieldsRes.json();
       const langData = await langRes.json();
-
       if (fieldData.status) setFields(fieldData.data);
       if (langData.status) {
         const activeLang = langData.data.filter((l) => l.active == 1);
@@ -265,6 +263,19 @@ export default function DynamicModule() {
       alert("Lỗi server");
     }
   };
+  ////XEM NHANH
+
+  const getPreviewLink = (item) => {
+    let slug = item.slug;
+
+    if (typeof slug === "object") {
+      slug = slug?.[activeTab] || Object.values(slug)[0];
+    }
+
+    if (!slug) return "#";
+    return `${window.location.origin}/${slug}.html`;
+  };
+
   // ===== SCROLL TOP =====
   const scrollTop = () => {
     const content = document.querySelector(".content");
@@ -274,7 +285,6 @@ export default function DynamicModule() {
     });
   };
   /////drag and drop
-
   const handleDragEnd = async (event) => {
     const { active, over } = event;
 
@@ -284,12 +294,6 @@ export default function DynamicModule() {
     const newIndex = articles.findIndex((m) => m.id === over.id);
 
     const newMenus = arrayMove(articles, oldIndex, newIndex);
-
-    // cập nhật num theo thứ tự mới
-    // const updated = newMenus.map((item, index) => ({
-    //   ...item,
-    //   num: (page - 1) * limit + index + 1,
-    // }));
     const updated = newMenus.map((item, index) => ({
       ...item,
       num: total - ((page - 1) * limit + index),
@@ -513,6 +517,16 @@ export default function DynamicModule() {
 
                           <td className="col-actions txt-center">
                             <div className="btn-actions">
+                              <button
+                                className="btn-view act"
+                                onClick={() => {
+                                  const url = getPreviewLink(item);
+                                  console.log("PREVIEW URL:", url); // 👈 đặt ở đây
+                                  window.open(url, "_blank");
+                                }}
+                              >
+                                <i className="fa-solid fa-eye"></i>
+                              </button>
                               <button
                                 className="btn-edit act"
                                 onClick={() =>

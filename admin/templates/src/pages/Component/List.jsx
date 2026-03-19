@@ -28,7 +28,44 @@ function SortableRow({ menu, children }) {
 
 export default function General() {
   const navigate = useNavigate();
-  const { loadModules } = useOutletContext(); ////loadmodule
+  const { loadModules } = useOutletContext();
+  const [data, setData] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editingValue, setEditingValue] = useState("");
+  ////update name
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditingValue(item.detail_name);
+  };
+  const saveEdit = async (item) => {
+    if (editingValue.trim() === "") return;
+    const fd = new FormData();
+
+    fd.append("id", item.id);
+    fd.append("detail_name", editingValue);
+
+    const res = await fetch("/api/admin/component.php?act=update_name", {
+      method: "POST",
+      body: fd,
+    });
+
+    const result = await res.json();
+
+    if (result.status) {
+      setData((prev) =>
+        prev.map((i) =>
+          i.id === item.id ? { ...i, detail_name: editingValue } : i
+        )
+      );
+      loadModules();
+      setEditingId(null);
+    } else {
+      setModal({ type: "error", payload: result.message });
+    }
+
+    setEditingId(null);
+  };
   ////kéo thả
   const handleDragEnd = async (event) => {
     const { active, over } = event;
@@ -61,8 +98,6 @@ export default function General() {
     });
     loadModules(); // ⭐ thêm dòng này
   };
-  const [data, setData] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]);
 
   // ⭐ Modal system duy nhất
   const [modal, setModal] = useState({
@@ -322,7 +357,24 @@ export default function General() {
                       <td className="col-order txt-center">{item.num}</td>
                       <td className="col-id txt-center">{item.id}</td>
                       <td className="col-type">{item.do}</td>
-                      <td>{item.detail_name}</td>
+                      <td onClick={() => startEdit(item)}>
+                        <div className="cat-name">
+                          {editingId === item.id ? (
+                            <input
+                              className="inline-input"
+                              autoFocus
+                              value={editingValue}
+                              onChange={(e) => setEditingValue(e.target.value)}
+                              onBlur={() => saveEdit(item)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveEdit(item);
+                              }}
+                            />
+                          ) : (
+                            item.detail_name
+                          )}
+                        </div>
+                      </td>
 
                       <td className="col-status txt-center">
                         <label className="switch">

@@ -17,6 +17,20 @@ require_once("../../includes/config.php");
 $act = isset($_GET['act']) ? $_GET['act'] : '';
 
 switch ($act) {
+    case "update_name":
+        $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+        $detail_name = isset($_POST['detail_name']) ? trim($_POST['detail_name']) : '';
+        $GLOBALS['sp']->execute("
+                        UPDATE {$GLOBALS['db_sp']}.component_detail
+                        SET name = ?
+                        WHERE component_id = ?
+                        ", [$detail_name,$id]);
+
+        echo json_encode([
+            "status" => true
+            ]);
+
+        break;
     case "comp":
 
         $module = isset($_GET['module']) ? $_GET['module'] : '';

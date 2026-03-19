@@ -209,9 +209,9 @@ export default function Dashboard() {
                   </linearGradient>
                 </defs>
 
-                <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                <CartesianGrid strokeDasharray="3 3" opacity={0.5} />
 
-                <XAxis dataKey="name" tick={{ fill: "#888" }} />
+                <XAxis dataKey="name" tick={{ fill: "#ccc" }} />
 
                 <Tooltip content={CustomTooltip} />
 
@@ -307,7 +307,7 @@ export default function Dashboard() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
-              <h3>Chi tiết đơn #{orderDetail.order.id}</h3>
+              <h3>Chi tiết đơn #{orderDetail.order.order_code}</h3>
               <button
                 className="btn-close-cart"
                 onClick={() => setShowDetail(false)}

@@ -14,7 +14,7 @@ export default function CategoryCreate() {
   const [categories, setCategories] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
   const [fileMap, setFileMap] = useState({});
-
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     parent_id: 0,
     active: 1,
@@ -116,35 +116,30 @@ export default function CategoryCreate() {
   /* ================= CREATE ================= */
 
   const handleCreate = async () => {
-    const defaultLang = languages[0]; // ngôn ngữ mặc định
+    const defaultLang = languages[0];
     const name = form.languages?.[defaultLang.id]?.name;
-    if (!name || name.trim() === "") {
-      setActiveTab(defaultLang.id);
+    if (!name || name.trim() === "") return;
 
-      setTimeout(() => {
-        document.querySelector("input")?.focus();
-      }, 100);
+    setSaving(true); // bắt đầu
+    try {
+      const fd = new FormData();
+      fd.append("comp", compId);
+      fd.append("parent_id", form.parent_id);
+      fd.append("languages", JSON.stringify(form.languages));
 
-      return; // không cho lưu
+      Object.keys(fileMap).forEach((k) => fd.append(k, fileMap[k]));
+
+      const res = await fetch("/api/admin/category.php?act=add", {
+        method: "POST",
+        body: fd,
+      });
+
+      const result = await res.json();
+      if (result.status) navigate(`/${module}/category`);
+      else alert("Lỗi thêm danh mục");
+    } finally {
+      setSaving(false); // kết thúc
     }
-
-    const fd = new FormData();
-
-    fd.append("comp", compId);
-    fd.append("parent_id", form.parent_id);
-    fd.append("languages", JSON.stringify(form.languages));
-
-    Object.keys(fileMap).forEach((k) => fd.append(k, fileMap[k]));
-
-    const res = await fetch("/api/admin/category.php?act=add", {
-      method: "POST",
-      body: fd,
-    });
-
-    const result = await res.json();
-
-    if (result.status) navigate(`/${module}/category`);
-    else alert("Lỗi thêm danh mục");
   };
 
   /* ================= HELP ================= */
@@ -160,8 +155,20 @@ export default function CategoryCreate() {
   return (
     <main className="page-editor">
       <div className="action-bar">
-        <button className="c-btn btn-save" onClick={handleCreate}>
-          <i className="fa-regular fa-floppy-disk"></i> Lưu
+        <button
+          className="c-btn btn-save"
+          onClick={handleCreate}
+          disabled={saving}
+        >
+          {saving ? (
+            <>
+              <i className="fa fa-spinner fa-spin"></i> Đang lưu...
+            </>
+          ) : (
+            <>
+              <i className="fa-regular fa-floppy-disk"></i> Lưu
+            </>
+          )}
         </button>
 
         <button className="c-btn btn-cancel" onClick={() => navigate(-1)}>

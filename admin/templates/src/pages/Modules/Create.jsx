@@ -18,8 +18,8 @@ export default function Create() {
   const [fields, setFields] = useState([]);
 
   const [fileMap, setFileMap] = useState({});
-  const [gallery, setGallery] = useState([]);
-
+  const [multiimages, setGallery] = useState([]);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     languages: {},
     active: 1,
@@ -128,50 +128,85 @@ export default function Create() {
   /* ================= CREATE ================= */
 
   const handleCreate = async () => {
-    const defaultLang = languages[0]; // ngôn ngữ mặc định
+    const defaultLang = languages[0];
     const name = form.languages?.[defaultLang.id]?.name;
+
     if (!name || name.trim() === "") {
       setActiveTab(defaultLang.id);
-
       setTimeout(() => {
         document.querySelector("input")?.focus();
       }, 100);
-
-      return; // không cho lưu
+      return;
     }
-    const fd = new FormData();
-    fd.append("module", module);
-    fd.append("parent_id", form.parent_id || 0);
-    fd.append("languages", JSON.stringify(form.languages));
-    fd.append("price", form.price || "");
-    fd.append("priceold", form.priceold || "");
 
-    Object.keys(fileMap).forEach((k) => fd.append(k, fileMap[k]));
+    setSaving(true); // bắt đầu
+    try {
+      const fd = new FormData();
+      fd.append("module", module);
+      fd.append("parent_id", form.parent_id || 0);
+      fd.append("languages", JSON.stringify(form.languages));
+      fd.append("price", form.price || "");
+      fd.append("priceold", form.priceold || "");
 
-    gallery.forEach((img, index) => {
-      if (img instanceof File) {
-        fd.append("gallery[]", img);
-        fd.append("gallery_new_num[]", index);
+      Object.keys(fileMap).forEach((k) => fd.append(k, fileMap[k]));
+
+      const uploadedImages = [];
+
+      for (let i = 0; i < multiimages.length; i++) {
+        if (multiimages[i] instanceof File) {
+          const fdImg = new FormData();
+          fdImg.append("file", multiimages[i]);
+
+          const res = await fetch("/api/admin/articlelist/upload-image.php", {
+            method: "POST",
+            body: fdImg,
+          });
+
+          const data = await res.json();
+
+          if (data.status) {
+            uploadedImages.push(data.path);
+          } else {
+            alert("Upload ảnh lỗi");
+          }
+        }
       }
-    });
+      fd.append("gallery_paths", JSON.stringify(uploadedImages));
+      const res = await fetch("/api/admin/articlelist.php?act=create", {
+        method: "POST",
+        body: fd,
+      });
 
-    const res = await fetch("/api/admin/articlelist.php?act=add", {
-      method: "POST",
-      body: fd,
-    });
+      const result = await res.json();
 
-    const result = await res.json();
-
-    if (result.status) navigate(`/${module}`);
-    else alert("Lỗi thêm");
+      if (result.status) {
+        navigate(`/${module}`);
+      } else {
+        alert(result.message || "Lỗi thêm");
+      }
+    } finally {
+      setSaving(false); // bắt đầu
+    }
   };
   /* ================= RENDER ================= */
 
   return (
     <main className="page-editor">
       <div className="action-bar">
-        <button className="c-btn btn-save" onClick={handleCreate}>
-          <i className="fa-regular fa-floppy-disk"></i> Lưu
+        <button
+          className="c-btn btn-save"
+          onClick={handleCreate}
+          disabled={saving}
+        >
+          {saving ? (
+            <>
+              <i className="fa fa-spinner fa-spin"></i> Đang lưu...
+            </>
+          ) : (
+            <>
+              <i className="fa-regular fa-floppy-disk"></i> Lưu
+            </>
+          )}
         </button>
 
         <button className="c-btn btn-cancel" onClick={() => navigate(-1)}>
@@ -289,7 +324,10 @@ export default function Create() {
             {fieldMap.multi_images && (
               <div className="form-group">
                 <label>Ảnh liên quan (upload nhiều hình cùng lúc)</label>
-                <UploadMultipleImages images={gallery} setImages={setGallery} />
+                <UploadMultipleImages
+                  images={multiimages}
+                  setImages={setGallery}
+                />
               </div>
             )}
             {fieldMap.category && (

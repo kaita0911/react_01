@@ -43,14 +43,14 @@ function Home() {
   };
   //banner
   useEffect(() => {
-    fetch(`${API_URL}/api/banner.php?comp=7`)
+    fetch(`${API_URL}/api/banner.php?comp=77`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
           setBannerTop(data.data);
         }
       });
-    fetch(`${API_URL}/api/banner.php?comp=73`)
+    fetch(`${API_URL}/api/banner.php?comp=74`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {

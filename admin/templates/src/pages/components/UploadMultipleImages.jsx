@@ -78,7 +78,7 @@ export default function UploadMultipleImages({
     }
 
     if (img?.img_vn) {
-      return `${API_URL}/${img.img_vn}`;
+      return `${API_URL}${img.img_vn}`;
     }
 
     return "";

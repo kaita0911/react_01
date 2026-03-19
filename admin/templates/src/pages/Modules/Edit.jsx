@@ -19,6 +19,7 @@ export default function Edit() {
   const [fileMap, setFileMap] = useState({});
   const [gallery, setGallery] = useState([]);
   const [deletedGallery, setDeletedGallery] = useState([]);
+  const [saving, setSaving] = useState(false);
   /* ================= load component ================= */
   useEffect(() => {
     const loadComponent = async () => {
@@ -77,9 +78,6 @@ export default function Edit() {
         if (detail.status) {
           const d = detail.data;
 
-          console.log("DETAIL DATA:", d);
-          // console.log("LANGUAGES:", d.languages);
-
           setForm({
             parent_id: d.parent_id, // QUAN TRỌNG
             hinhanh: d.img_thumb_vn,
@@ -127,50 +125,93 @@ export default function Edit() {
   /* ================= UPDATE ================= */
 
   const handleUpdate = async () => {
-    const fd = new FormData();
+    if (saving) return; // tránh spam click
 
-    fd.append("id", id);
-    fd.append("module", module);
-    fd.append("parent_id", form.parent_id || 0);
-    for (const k in form) {
-      if (k === "languages") {
-        fd.append("languages", JSON.stringify(form.languages));
+    setSaving(true);
+
+    try {
+      const fd = new FormData();
+
+      fd.append("id", id);
+      fd.append("module", module);
+      fd.append("parent_id", form.parent_id || 0);
+
+      // form thường
+      for (const k in form) {
+        if (k === "languages") {
+          fd.append("languages", JSON.stringify(form.languages));
+        } else if (k !== "parent_id") {
+          fd.append(k, form[k] ?? "");
+        }
+      }
+
+      // file đơn
+      for (const k in fileMap) {
+        if (fileMap[k]) {
+          fd.append(k, fileMap[k]);
+        }
+      }
+
+      const uploadedImages = [];
+      if (fieldMap.multi_images) {
+        // 👉 upload từng ảnh mới
+        for (let i = 0; i < gallery.length; i++) {
+          const img = gallery[i];
+
+          if (img instanceof File) {
+            const fdImg = new FormData();
+            fdImg.append("file", img);
+
+            const res = await fetch("/api/admin/articlelist/upload-image.php", {
+              method: "POST",
+              body: fdImg,
+            });
+
+            const data = await res.json();
+
+            if (data.status) {
+              uploadedImages.push({
+                path: data.path,
+                num: i,
+              });
+            } else {
+              alert("Upload ảnh lỗi");
+            }
+          }
+
+          // 👉 ảnh cũ (chỉ update vị trí)
+          else if (img?.id) {
+            fd.append(
+              "gallery_update[]",
+              JSON.stringify({
+                id: img.id,
+                num: i,
+              })
+            );
+          }
+        }
+        fd.append("delete_gallery", JSON.stringify(deletedGallery || []));
+        fd.append("gallery_new", JSON.stringify(uploadedImages));
+      }
+
+      const res = await fetch("/api/admin/articlelist.php?act=update", {
+        method: "POST",
+        body: fd,
+      });
+
+      const result = await res.json();
+
+      if (result.status) {
+        navigate(`/${module}`);
       } else {
-        fd.append(k, form[k]);
+        alert(result.message || "Lỗi cập nhật");
       }
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi kết nối server");
+    } finally {
+      setSaving(false);
     }
-
-    for (const k in fileMap) {
-      fd.append(k, fileMap[k]);
-    }
-    gallery.forEach((img, index) => {
-      // ảnh upload mới
-      if (img instanceof File) {
-        fd.append("gallery[]", img);
-        fd.append("gallery_new_num[]", index);
-      }
-
-      // ảnh đã có trong DB → cập nhật num
-      else if (img.id) {
-        fd.append(
-          "gallery_update[]",
-          JSON.stringify({
-            id: img.id,
-            num: index,
-          })
-        );
-      }
-    });
-    fd.append("delete_gallery", JSON.stringify(deletedGallery));
-    const res = await fetch("/api/admin/articlelist.php?act=update", {
-      method: "POST",
-      body: fd,
-    });
-
-    const result = await res.json();
-
-    if (result.status) navigate(`/${module}`);
-    else alert("Lỗi cập nhật");
   };
 
   /* ================= TREE ================= */
@@ -213,7 +254,15 @@ export default function Edit() {
     <main className="page-editor">
       <div className="action-bar">
         <button className="c-btn btn-save" onClick={handleUpdate}>
-          <i className="fa-regular fa-floppy-disk"></i> Cập nhật
+          {saving ? (
+            <>
+              <i className="fa fa-spinner fa-spin"></i> Đang cập nhật...
+            </>
+          ) : (
+            <>
+              <i className="fa-regular fa-floppy-disk"></i> Cập nhật
+            </>
+          )}
         </button>
 
         <button className="c-btn btn-cancel" onClick={() => navigate(-1)}>
