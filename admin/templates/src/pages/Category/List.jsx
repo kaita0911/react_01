@@ -103,11 +103,12 @@ export default function CategoryList() {
   };
   ////upload image
   const handleImageUpload = async (id, file) => {
+    const cate = rows.find((a) => a.id === id);
     const fd = new FormData();
 
     fd.append("id", id);
     fd.append("image", file);
-
+    fd.append("slug", cate.slug?.[activeTab]);
     const res = await fetch("/api/admin/category.php?act=update_image", {
       method: "POST",
       body: fd,
@@ -118,9 +119,7 @@ export default function CategoryList() {
     if (data.status) {
       setRows((prev) =>
         prev.map((item) =>
-          item.id === id
-            ? { ...item, img_vn: data.image + "?t=" + Date.now() }
-            : item
+          item.id === id ? { ...item, img_vn: data.image } : item
         )
       );
     }

@@ -1,7 +1,7 @@
 <?php
 
 $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
-
+$slug = isset($_POST['slug']) ? trim($_POST['slug']) : '';
 if($id && isset($_FILES['image']) && $_FILES['image']['name'] != '') {
 
     $uploadFolder = 'hinh-anh/cate/';
@@ -33,21 +33,21 @@ if($id && isset($_FILES['image']) && $_FILES['image']['name'] != '') {
         }
     }
 
-    /* LẤY TÊN FILE GỐC + CHUẨN SEO */
-    $rawName = pathinfo($_FILES['image']['name'], PATHINFO_FILENAME);
-    $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+    // /* LẤY TÊN FILE GỐC + CHUẨN SEO */
+    // $rawName = pathinfo($_FILES['image']['name'], PATHINFO_FILENAME);
+    // $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
 
-    // ✅ chuẩn SEO: chỉ chữ thường, số, dấu "-", bỏ ký tự lạ
-    $slugName = preg_replace('/[^a-z0-9]+/i', '-', strtolower($rawName));
-    $filename = $slugName . '.' . $ext;
+    // // ✅ chuẩn SEO: chỉ chữ thường, số, dấu "-", bỏ ký tự lạ
+    // $slugName = preg_replace('/[^a-z0-9]+/i', '-', strtolower($rawName));
+    $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+    $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    if (!in_array($ext, $allowed)) {
+        echo json_encode(["status" => false, "message" => "File không hợp lệ"]);
+        exit;
+    }
+    $filename = $slug . '-' . time() . '.' . $ext;
 
     $filePath = $uploadDir . $filename;
-
-    // Nếu trùng tên, thêm số ngẫu nhiên để tránh ghi đè file khác
-    if(file_exists($filePath)) {
-        $filename = $slugName . '-' . rand(1000, 9999) . '.' . $ext;
-        $filePath = $uploadDir . $filename;
-    }
 
     if(move_uploaded_file($_FILES['image']['tmp_name'], $filePath)) {
         $image = $uploadFolder . $filename; // lưu DB

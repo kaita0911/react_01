@@ -136,10 +136,13 @@ export default function DynamicModule() {
   }, [loadData]);
   ////update image
   const handleImageUpload = async (id, file) => {
+    // tìm bài viết trong state
+    const article = articles.find((a) => a.id === id);
     const fd = new FormData();
 
     fd.append("id", id);
     fd.append("image", file);
+    fd.append("slug", article.slug?.[activeTab]);
     fd.append("module", module);
     const res = await fetch("/api/admin/articlelist.php?act=update_image", {
       method: "POST",
@@ -417,7 +420,7 @@ export default function DynamicModule() {
                                     <img
                                       className="img-thumbs"
                                       src={API_URL + item.img_thumb_vn}
-                                      alt=""
+                                      alt={item.names?.[activeTab]}
                                     />
                                     <div className="img-overlay">
                                       <i className="fa-solid fa-camera"></i>

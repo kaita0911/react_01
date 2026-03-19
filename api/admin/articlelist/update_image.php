@@ -1,6 +1,7 @@
 <?php
 
 $module = isset($_POST['module']) ? trim($_POST['module']) : '';
+$slug = isset($_POST['slug']) ? trim($_POST['slug']) : '';
 $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
 $comp_id = getCompId($module);
 
@@ -25,11 +26,11 @@ if ($id && isset($_FILES['image']) && $_FILES['image']['name'] != '') {
     }
 
     // Chuẩn SEO tên file
-    $rawName = pathinfo($_FILES['image']['name'], PATHINFO_FILENAME);
-    $slugName = preg_replace('/[^a-z0-9]+/i', '-', strtolower($rawName));
+    // $rawName = pathinfo($_FILES['image']['name'], PATHINFO_FILENAME);
+    // $slugName = preg_replace('/[^a-z0-9]+/i', '-', strtolower($rawName));
 
     // Tạo tên file mới (luôn mới)
-    $filename = $slugName . '-' . $id . '.' . $ext;
+    $filename = $slug . '-' . time() . '.' . $ext;
     $filePath = $uploadDir . $filename;
 
     // Xóa file cũ nếu có
