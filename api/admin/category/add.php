@@ -1,5 +1,22 @@
 <?php
 
+function toSlug($str)
+{
+    $str = strtolower($str);
+
+    $str = preg_replace('/[áàảãạăắằẳẵặâấầẩẫậ]/u', 'a', $str);
+    $str = preg_replace('/[éèẻẽẹêếềểễệ]/u', 'e', $str);
+    $str = preg_replace('/[íìỉĩị]/u', 'i', $str);
+    $str = preg_replace('/[óòỏõọôốồổỗộơớờởỡợ]/u', 'o', $str);
+    $str = preg_replace('/[úùủũụưứừửữự]/u', 'u', $str);
+    $str = preg_replace('/[ýỳỷỹỵ]/u', 'y', $str);
+    $str = preg_replace('/[đ]/u', 'd', $str);
+
+    $str = preg_replace('/[^a-z0-9-]+/', '-', $str);
+    $str = trim($str, '-');
+
+    return $str;
+}
 $id     = isset($_POST['id']) ? intval($_POST['id']) : 0;
 $comp   = isset($_POST['comp']) ? intval($_POST['comp']) : '';
 $parent = isset($_POST['parent_id']) ? intval($_POST['parent_id']) : '';
@@ -39,10 +56,20 @@ WHERE id=?
 
 }
 /* ===== UPLOAD IMAGE ===== */
+$name = 'image';
 
+if (!empty($languages)) {
+    if (isset($languages[1]['name'])) {
+        $name = $languages[1]['name'];
+    } else {
+        $firstLang = reset($languages);
+        $name = isset($firstLang['name']) ? $firstLang['name'] : 'image';
+    }
+}
 $uploadFolder = 'hinh-anh/cate/';
 if(isset($_FILES['hinhdanhmuc']) && $_FILES['hinhdanhmuc']['name'] != '') {
-
+    $ext = strtolower(pathinfo($_FILES['hinhdanhmuc']['name'], PATHINFO_EXTENSION));
+    $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
 
     $uploadDir = $_SERVER['DOCUMENT_ROOT'].'/'.$uploadFolder;
     if(!is_dir($uploadDir)) {
@@ -51,10 +78,10 @@ if(isset($_FILES['hinhdanhmuc']) && $_FILES['hinhdanhmuc']['name'] != '') {
     /* XÓA HÌNH CŨ */
 
     $old = $GLOBALS['sp']->getOne("
-SELECT img_vn
-FROM {$GLOBALS['db_sp']}.categories
-WHERE id=?
-", array($id));
+    SELECT img_vn
+    FROM {$GLOBALS['db_sp']}.categories
+    WHERE id=?
+    ", array($id));
     /* XÓA HÌNH CŨ */
     $oldPath = $_SERVER['DOCUMENT_ROOT'].'/'.$old;
     $realPath = realpath($oldPath);
@@ -68,17 +95,23 @@ WHERE id=?
     ) {
         unlink($realPath);
     }
-    $ext  = pathinfo($_FILES['hinhdanhmuc']['name'], PATHINFO_EXTENSION);
-    $filename = time().'_'.rand(1000, 9999).'.'.$ext;
+    $slug = toSlug($name);
+    $slug = substr($slug, 0, 100);
+
+    if(empty($slug)) {
+        $slug = 'image';
+    }
+
+    $filename = $slug . '-' . time() . '.' . $ext;
 
     if(move_uploaded_file($_FILES['hinhdanhmuc']['tmp_name'], $uploadDir.$filename)) {
         $image = $uploadFolder.$filename;
 
         $GLOBALS['sp']->Execute("
-  UPDATE {$GLOBALS['db_sp']}.categories
-  SET img_vn=?
-  WHERE id=?
-  ", array($image,$id));
+        UPDATE {$GLOBALS['db_sp']}.categories
+        SET img_vn=?
+        WHERE id=?
+        ", array($image,$id));
     }
 
 }

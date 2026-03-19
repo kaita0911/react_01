@@ -3,71 +3,64 @@
 $module = isset($_POST['module']) ? trim($_POST['module']) : '';
 $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
 $comp_id = getCompId($module);
-if($id && isset($_FILES['image']) && $_FILES['image']['name'] != '') {
 
-    $old = $GLOBALS['sp']->getOne("
-SELECT img_thumb_vn
-FROM {$GLOBALS['db_sp']}.articlelist
-WHERE id=?
-", [$id]);
+// Chuẩn hóa module + folder
+$module = preg_replace('/[^a-zA-Z0-9_-]/', '', $module);
+$uploadFolder = 'hinh-anh/' . $module . '/';
+$uploadDir = $_SERVER['DOCUMENT_ROOT'].'/'.$uploadFolder;
 
-    if ($old) {
+if ($id && isset($_FILES['image']) && $_FILES['image']['name'] != '') {
 
-        $oldPath = $_SERVER['DOCUMENT_ROOT'].'/'.$old;
-
-        $realPath = realpath($oldPath);
-        $baseDir  = realpath($_SERVER['DOCUMENT_ROOT'].'/hinh-anh/');
-
-        if (
-            $realPath &&
-            $baseDir &&
-            strpos($realPath, $baseDir) === 0 &&   // nằm trong hinh-anh
-            is_file($realPath) &&                  // là file thật
-            file_exists($realPath)                // tồn tại
-        ) {
-            unlink($realPath);
-        }
-    }
-    $uploadFolder = 'hinh-anh/';
-    switch($comp_id) {
-        case 1:
-            $uploadFolder .= 'tin-tuc/';
-            break;
-
-        case 2:
-            $uploadFolder .= 'thumbs/';
-            break;
-        case 77:
-            $uploadFolder .= 'banner/';
-            break;
-
-        default:
-            $uploadFolder .= 'thong-tin-chung/';
-    }
-    /* TẠO FILE NAME */
-
-    $uploadDir = $_SERVER['DOCUMENT_ROOT'].'/'.$uploadFolder;
-
-    if(!is_dir($uploadDir)) {
+    // Tạo folder nếu chưa tồn tại
+    if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0777, true);
     }
 
-    $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
-    $filename = time().'_'.rand(1000, 9999).'.'.$ext;
+    // Kiểm tra file hợp lệ
+    $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+    $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    if (!in_array($ext, $allowed)) {
+        echo json_encode(["status" => false, "message" => "File không hợp lệ"]);
+        exit;
+    }
 
-    if(move_uploaded_file($_FILES['image']['tmp_name'], $uploadDir.$filename)) {
+    // Chuẩn SEO tên file
+    $rawName = pathinfo($_FILES['image']['name'], PATHINFO_FILENAME);
+    $slugName = preg_replace('/[^a-z0-9]+/i', '-', strtolower($rawName));
 
-        $image = $uploadFolder.$filename;
+    // Tạo tên file mới (luôn mới)
+    $filename = $slugName . '-' . $id . '.' . $ext;
+    $filePath = $uploadDir . $filename;
 
+    // Xóa file cũ nếu có
+    $old = $GLOBALS['sp']->getOne("
+        SELECT img_thumb_vn
+        FROM {$GLOBALS['db_sp']}.articlelist
+        WHERE id=?
+    ", [$id]);
+
+    if ($old) {
+        $oldPath = $_SERVER['DOCUMENT_ROOT'].'/'.$old;
+        if (is_file($oldPath)) {
+            unlink($oldPath);
+        }
+    }
+
+    // Upload file mới
+    if (move_uploaded_file($_FILES['image']['tmp_name'], $filePath)) {
+
+        // Cập nhật DB luôn với file mới
         $GLOBALS['sp']->Execute("
-    UPDATE {$GLOBALS['db_sp']}.articlelist
-    SET img_thumb_vn=?
-    WHERE id=?
-    ", [$image,$id]);
+            UPDATE {$GLOBALS['db_sp']}.articlelist
+            SET img_thumb_vn=?
+            WHERE id=?
+        ", [$uploadFolder . $filename, $id]);
 
+        // Trả về frontend
         echo json_encode([
             "status" => true,
-            "image" => $image
+            "image" => $uploadFolder . $filename, // hiển thị UI
+            "filename" => $filename // lưu tên file
         ]);
         exit;
     }

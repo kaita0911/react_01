@@ -151,7 +151,9 @@ export default function DynamicModule() {
     if (data.status) {
       setArticles((prev) =>
         prev.map((item) =>
-          item.id === id ? { ...item, img_thumb_vn: data.image } : item
+          item.id === id
+            ? { ...item, img_thumb_vn: data.image + "?t=" + Date.now() }
+            : item
         )
       );
     }
