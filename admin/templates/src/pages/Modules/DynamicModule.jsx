@@ -42,6 +42,7 @@ export default function DynamicModule() {
   const [editValue, setEditValue] = useState("");
   const [loading, setLoading] = useState(true);
   const [fields, setFields] = useState([]);
+  const [showCopyModal, setShowCopyModal] = useState(false);
   ////update name
   const saveName = async (id) => {
     const fd = new FormData();
@@ -317,6 +318,71 @@ export default function DynamicModule() {
       body: formData,
     });
   };
+  ///copy
+
+  const handleCopyMultiple = () => {
+    if (selectedIds.length === 0) return;
+    setShowCopyModal(true);
+  };
+  const confirmCopy = async () => {
+    const fd = new FormData();
+    selectedIds.forEach((id) => fd.append("ids[]", id));
+
+    try {
+      const res = await fetch("/api/admin/articlelist.php?act=copy_multi", {
+        method: "POST",
+        body: fd,
+      });
+
+      const text = await res.text();
+      console.log("RAW:", text);
+
+      const result = JSON.parse(text);
+
+      if (result.status) {
+        setSelectedIds([]);
+        loadData();
+      } else {
+        alert(result.message || "Copy thất bại");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi server");
+    }
+
+    setShowCopyModal(false);
+  };
+  // const handleCopyMultiple = async () => {
+  //   if (selectedIds.length === 0) return;
+
+  //   if (!confirm(`Copy ${selectedIds.length} bài viết?`)) return;
+
+  //   const fd = new FormData();
+  //   selectedIds.forEach((id) => fd.append("ids[]", id));
+
+  //   try {
+  //     const res = await fetch("/api/admin/articlelist.php?act=copy_multi", {
+  //       method: "POST",
+  //       body: fd,
+  //     });
+
+  //     const text = await res.text(); // 👈 đọc raw trước
+  //     console.log("RAW:", text);
+
+  //     const result = JSON.parse(text);
+  //     console.log("JSON:", result);
+
+  //     if (result.status) {
+  //       setSelectedIds([]);
+  //       loadData();
+  //     } else {
+  //       alert(result.message || "Copy thất bại");
+  //     }
+  //   } catch (err) {
+  //     console.error("FETCH ERROR:", err);
+  //     alert("Lỗi server");
+  //   }
+  // };
   return (
     <>
       <main>
@@ -333,6 +399,14 @@ export default function DynamicModule() {
             onClick={handleDeleteMultiple}
           >
             <i className="fa-solid fa-trash-can"></i> Xoá đã chọn
+            {selectedIds.length > 0 && `(${selectedIds.length})`}
+          </button>
+          <button
+            className="c-btn btn-copy-multi"
+            disabled={selectedIds.length === 0}
+            onClick={handleCopyMultiple}
+          >
+            <i className="fa-solid fa-copy"></i> Copy đã chọn
             {selectedIds.length > 0 && `(${selectedIds.length})`}
           </button>
         </div>
@@ -577,8 +651,16 @@ export default function DynamicModule() {
           scrollTop={scrollTop}
         />
         {showDeleteModal && (
-          <div className="modal">
-            <div className="modal-box delete-box">
+          <div
+            className="modal"
+            onClick={() => {
+              setShowDeleteModal(false);
+            }}
+          >
+            <div
+              className="modal-box delete-box"
+              onClick={(e) => e.stopPropagation()}
+            >
               <h3>Xác nhận xoá</h3>
 
               <p>
@@ -599,6 +681,31 @@ export default function DynamicModule() {
                     setDeleteId(null);
                     setDeleteMode(null);
                   }}
+                >
+                  Huỷ
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showCopyModal && (
+          <div className="modal" onClick={() => setShowCopyModal(false)}>
+            <div
+              className="modal-box copy-box"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3>Xác nhận copy</h3>
+
+              <p>Bạn có chắc muốn copy {selectedIds.length} bài viết?</p>
+
+              <div className="modal-actions">
+                <button className="btn-confirm" onClick={confirmCopy}>
+                  Copy
+                </button>
+
+                <button
+                  className="btn-cancel"
+                  onClick={() => setShowCopyModal(false)}
                 >
                   Huỷ
                 </button>

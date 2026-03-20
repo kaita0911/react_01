@@ -1,11 +1,7 @@
-// import { useState } from 'react'
-// import reactLogo from './assets/react.svg'
-// import viteLogo from '/vite.svg'
-// import './App.css'
 import { useEffect } from "react";
 import Resolver from "./router/Resolver";
 import HtmlRouter from "./router/HtmlRouter";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Cart from "./pages/Cart/Cart";
 import { CartProvider } from "@/context/CartContext";
 import CartToast from "@/context/CartToast";
@@ -33,20 +29,39 @@ function App() {
     <>
       <WishlistProvider>
         <CartProvider>
-          <Header />
           <Routes>
-            <Route path="/" element={<Home />} />
-            {/* ✅ Route cụ thể trước */}
-            <Route path="/tag/:slug" element={<Tag />} />
-            <Route path="/cart/" element={<Cart />} />
-            <Route path="/thanh-toan/" element={<Checkout />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/wishlist" element={<Wishlist />} />;
-            {/* ⚠️ Route tổng quát để cuối */}
-            <Route path="/:slug.html" element={<HtmlRouter />} />
-            <Route path="/:slug" element={<Resolver />} />
+            {/* redirect root → /vi */}
+            <Route path="/" element={<Navigate to="/vi" />} />
+
+            {/* group theo lang */}
+            <Route
+              path="/:lang/*"
+              element={
+                <>
+                  <Header />
+
+                  <Routes>
+                    {/* HOME */}
+                    <Route index element={<Home />} />
+
+                    {/* route cụ thể */}
+                    <Route path="tag/:slug" element={<Tag />} />
+                    <Route path="cart" element={<Cart />} />
+                    <Route path="thanh-toan" element={<Checkout />} />
+                    <Route path="search" element={<Search />} />
+                    <Route path="wishlist" element={<Wishlist />} />
+
+                    {/* route động */}
+                    <Route path=":slug.html" element={<HtmlRouter />} />
+                    <Route path=":slug" element={<Resolver />} />
+                  </Routes>
+
+                  <Footer />
+                </>
+              }
+            />
           </Routes>
-          <Footer />
+
           <CartToast />
         </CartProvider>
       </WishlistProvider>

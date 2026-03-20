@@ -2,23 +2,7 @@
 
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
-function toSlug($str)
-{
-    $str = strtolower($str);
 
-    $str = preg_replace('/[áàảãạăắằẳẵặâấầẩẫậ]/u', 'a', $str);
-    $str = preg_replace('/[éèẻẽẹêếềểễệ]/u', 'e', $str);
-    $str = preg_replace('/[íìỉĩị]/u', 'i', $str);
-    $str = preg_replace('/[óòỏõọôốồổỗộơớờởỡợ]/u', 'o', $str);
-    $str = preg_replace('/[úùủũụưứừửữự]/u', 'u', $str);
-    $str = preg_replace('/[ýỳỷỹỵ]/u', 'y', $str);
-    $str = preg_replace('/[đ]/u', 'd', $str);
-
-    $str = preg_replace('/[^a-z0-9-]+/', '-', $str);
-    $str = trim($str, '-');
-
-    return $str;
-}
 $id = isset($_POST['id']) ? trim($_POST['id']) : '';
 $category_id = isset($_POST['parent_id']) ? intval($_POST['parent_id']) : 0;
 $module = isset($_POST['module']) ? trim($_POST['module']) : '';
@@ -96,7 +80,7 @@ if(isset($_FILES['hinhanh']) && $_FILES['hinhanh']['error'] == 0) {
         ]);
     }
 
-    $slug = toSlug($name);
+    $slug = slugify($name);
     $slug = substr($slug, 0, 100);
 
     if(empty($slug)) {
@@ -279,20 +263,62 @@ foreach($languages as $langid => $data) {
     $keyword   = isset($data['keyword']) ? $data['keyword'] : '';
     $des   = isset($data['des']) ? $data['des'] : '';
 
-    $GLOBALS['sp']->Execute("
-  UPDATE {$GLOBALS['db_sp']}.articlelist_detail
-  SET name=?,slug=?,short=?,content=?, keyword = ?, des=?
-  WHERE articlelist_id=? AND languageid=?
-  ", [
-        $name,
-        $slug,
-        $short,
-        $content,
-        $keyword,
-        $des,
-        $id,
-        $langid
-    ]);
+    // ⭐ CHECK EXIST
+    $exists = $GLOBALS['sp']->getOne("
+      SELECT COUNT(*)
+      FROM {$GLOBALS['db_sp']}.articlelist_detail
+      WHERE articlelist_id=? AND languageid=?
+  ", [$id, $langid]);
+    if($exists) {
+
+        // 👉 UPDATE
+        $GLOBALS['sp']->Execute("
+        UPDATE {$GLOBALS['db_sp']}.articlelist_detail
+        SET name=?,slug=?,short=?,content=?, keyword=?, des=?
+        WHERE articlelist_id=? AND languageid=?
+    ", [
+            $name,
+            $slug,
+            $short,
+            $content,
+            $keyword,
+            $des,
+            $id,
+            $langid
+        ]);
+
+    } else {
+
+        // 👉 INSERT (CÁI BẠN ĐANG THIẾU)
+        $GLOBALS['sp']->Execute("
+            INSERT INTO {$GLOBALS['db_sp']}.articlelist_detail
+            (articlelist_id, languageid, name, slug, short, content, keyword, des)
+            VALUES (?,?,?,?,?,?,?,?)
+        ", [
+            $id,
+            $langid,
+            $name,
+            $slug,
+            $short,
+            $content,
+            $keyword,
+            $des
+        ]);
+    }
+    //     $GLOBALS['sp']->Execute("
+    //   UPDATE {$GLOBALS['db_sp']}.articlelist_detail
+    //   SET name=?,slug=?,short=?,content=?, keyword = ?, des=?
+    //   WHERE articlelist_id=? AND languageid=?
+    //   ", [
+    //         $name,
+    //         $slug,
+    //         $short,
+    //         $content,
+    //         $keyword,
+    //         $des,
+    //         $id,
+    //         $langid
+    //     ]);
 
 }
 

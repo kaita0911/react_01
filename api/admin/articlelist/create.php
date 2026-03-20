@@ -1,22 +1,5 @@
 <?php
 
-function toSlug($str)
-{
-    $str = strtolower($str);
-
-    $str = preg_replace('/[áàảãạăắằẳẵặâấầẩẫậ]/u', 'a', $str);
-    $str = preg_replace('/[éèẻẽẹêếềểễệ]/u', 'e', $str);
-    $str = preg_replace('/[íìỉĩị]/u', 'i', $str);
-    $str = preg_replace('/[óòỏõọôốồổỗộơớờởỡợ]/u', 'o', $str);
-    $str = preg_replace('/[úùủũụưứừửữự]/u', 'u', $str);
-    $str = preg_replace('/[ýỳỷỹỵ]/u', 'y', $str);
-    $str = preg_replace('/[đ]/u', 'd', $str);
-
-    $str = preg_replace('/[^a-z0-9-]+/', '-', $str);
-    $str = trim($str, '-');
-
-    return $str;
-}
 $module = isset($_POST['module']) ? trim($_POST['module']) : '';
 $active = isset($_POST['active']) ? intval($_POST['active']) : 1;
 $new = isset($_POST['new']) ? intval($_POST['new']) : 1;
@@ -66,7 +49,7 @@ if(isset($_FILES['hinhanh']) && $_FILES['hinhanh']['error'] == 0) {
         ]);
     }
 
-    $slug = toSlug($name);
+    $slug = slugify($name);
     $slug = substr($slug, 0, 100);
 
     if(empty($slug)) {

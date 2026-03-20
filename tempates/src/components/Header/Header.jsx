@@ -1,47 +1,71 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { API_URL } from "@/config";
 import "./Header.scss";
-import { Link } from "react-router-dom";
 import MenuItem from "./MenuItem";
 import { useCart } from "@/context/CartContext";
-//import SearchBox from "./SearchBox";
 import { useWishlist } from "@/context/WishlistContext";
+
 function Header() {
   const [menu, setMenu] = useState([]);
+  const [infos, setInfos] = useState({});
+  const [keyword, setKeyword] = useState("");
+  const [languages, setLanguages] = useState([]);
   const { totalQty } = useCart();
+  const { totalWishlist } = useWishlist();
+
+  const navigate = useNavigate();
+  const { lang } = useParams(); // 🔥 lấy lang từ URL
+  const currentLang = lang || "vi";
+  const changeLang = (newLang) => {
+    const path = window.location.pathname;
+    const segments = path.split("/").filter(Boolean);
+
+    // nếu chưa có lang (trường hợp hiếm)
+    if (segments.length === 0) {
+      navigate(`/${newLang}`);
+      return;
+    }
+
+    // thay lang ở segment đầu
+    segments[0] = newLang;
+
+    navigate("/" + segments.join("/"));
+  };
   useEffect(() => {
-    fetch(`${API_URL}/api/menu.php`)
+    fetch(`${API_URL}/api/languages.php`)
+      .then((res) => res.json())
+      .then((data) => setLanguages(data));
+  }, []);
+  // 👉 MENU theo lang
+  useEffect(() => {
+    fetch(`${API_URL}/api/menu.php?lang=${currentLang}`)
       .then((res) => res.json())
       .then((data) => setMenu(data))
       .catch((err) => console.error(err));
-  }, []);
+  }, [currentLang]);
 
-  const [infos, setInfos] = useState({});
-
+  // 👉 INFOS theo lang
   useEffect(() => {
-    fetch(`${API_URL}/api/infos.php`)
+    fetch(`${API_URL}/api/infos.php?lang=${currentLang}`)
       .then((res) => res.json())
       .then((data) => setInfos(data));
-  }, []);
-  ///search
-  const [keyword, setKeyword] = useState("");
-  const navigate = useNavigate();
+  }, [currentLang]);
+
+  // 👉 SEARCH
   const handleSearch = (e) => {
     e.preventDefault();
-
     if (!keyword.trim()) return;
 
-    navigate(`/search?q=${encodeURIComponent(keyword)}`);
+    navigate(`/${currentLang}/search?q=${encodeURIComponent(keyword)}`);
   };
 
-  ////wishlist
-  const { totalWishlist } = useWishlist();
   return (
     <header className="p-header">
       <div className="container">
         <div className="p-header-wrap">
-          <Link className="logo" to="/">
+          {/* LOGO */}
+          <Link className="logo" to={`/${currentLang}`}>
             {infos.logoHome && (
               <img
                 src={`${API_URL}/${infos.logoHome.img_thumb_vn}`}
@@ -49,20 +73,26 @@ function Header() {
               />
             )}
           </Link>
+
+          {/* MENU */}
           <div className="menu menu_mb" id="mobile-menu">
             <nav className="menutop">
               <ul>
                 {menu.map((item) => (
-                  <MenuItem key={item.id} item={item} />
+                  <MenuItem key={item.id} item={item} lang={currentLang} />
                 ))}
               </ul>
             </nav>
           </div>
+
+          {/* SEARCH */}
           <div className="box-search">
             <form onSubmit={handleSearch} className="search-form">
               <input
                 type="text"
-                placeholder="Tìm sản phẩm..."
+                placeholder={
+                  lang === "vi" ? "Tìm sản phẩm..." : "Search products..."
+                }
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
               />
@@ -71,17 +101,28 @@ function Header() {
                 <i className="fa-solid fa-magnifying-glass"></i>
               </button>
             </form>
-
-            {/* Tìm kiếm nâng cao <SearchBox /> */}
           </div>
-          <Link to="/wishlist" className="header-wishlist">
+          <div className="lang-switch">
+            {languages.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => changeLang(l.code)}
+                className={lang === l.code ? "active" : ""}
+              >
+                {l.name}
+              </button>
+            ))}
+          </div>
+          {/* WISHLIST */}
+          <Link to={`/${currentLang}/wishlist`} className="header-wishlist">
             ❤️
             {totalWishlist > 0 && (
               <span className="badge">{totalWishlist}</span>
             )}
           </Link>
 
-          <Link to="/cart/" className="cart-icon">
+          {/* CART */}
+          <Link to={`/${currentLang}/cart`} className="cart-icon">
             🛒
             {totalQty > 0 && <span className="badge">{totalQty}</span>}
           </Link>

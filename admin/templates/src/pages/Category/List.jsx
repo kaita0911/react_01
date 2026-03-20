@@ -578,8 +578,8 @@ export default function CategoryList() {
         </table>
       </DndContext>
       {deleteId && (
-        <div className="modal">
-          <div className="modal-box">
+        <div className="modal" onClick={() => setDeleteId(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <h3>Xác nhận xoá</h3>
             <p>Bạn có chắc muốn xóa?</p>
             <div className="modal-actions">
@@ -594,8 +594,16 @@ export default function CategoryList() {
         </div>
       )}
       {showDeleteModal && (
-        <div className="modal">
-          <div className="modal-box delete-box">
+        <div
+          className="modal"
+          onClick={() => {
+            setShowDeleteModal(false);
+          }}
+        >
+          <div
+            className="modal-box delete-box"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3>Xác nhận xoá</h3>
 
             <p>

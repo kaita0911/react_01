@@ -111,12 +111,14 @@ export default function Edit() {
   };
 
   const handleLangChange = (langId, field, value) => {
+    const key = String(langId); // ⭐ FIX
+
     setForm((p) => ({
       ...p,
       languages: {
         ...p.languages,
-        [langId]: {
-          ...p.languages[langId],
+        [key]: {
+          ...p.languages[key],
           [field]: value,
         },
       },
