@@ -1,10 +1,24 @@
 <IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteBase /admin/
-    RewriteRule ^index\.html$ - [L]
+  RewriteEngine On
 
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
+  # ===== BỎ QUA CKFinder =====
+  RewriteCond %{REQUEST_URI} ^/ckfinder/
+  RewriteRule ^ - [L]
 
-    RewriteRule . /admin/index.html [L]
+  # ===== BỎ QUA API =====
+  RewriteCond %{REQUEST_URI} ^/api/ [OR]
+  RewriteCond %{REQUEST_URI} ^/admin/api/
+  RewriteRule ^ - [L]
+
+  # ===== ADMIN ROUTER =====
+  RewriteCond %{REQUEST_URI} ^/admin
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ /admin/index.html [L]
+
+  # ===== FRONTEND ROUTER =====
+  RewriteCond %{REQUEST_URI} !^/admin
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ /index.html [L]
 </IfModule>

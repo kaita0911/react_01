@@ -34,7 +34,7 @@ export default function CategoryCreate() {
       const langData = await langRes.json();
 
       if (!compData.status) return;
-      const comp = compData.data;
+      const comp = compData.data.id;
       setCompId(comp);
 
       const [fieldRes, cateRes] = await Promise.all([

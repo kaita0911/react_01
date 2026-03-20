@@ -134,7 +134,7 @@ export default function CategoryList() {
 
       if (!comp.status) return;
 
-      const compId = comp.data;
+      const compId = comp.data.id;
 
       const [fieldsRes, catRes, langRes] = await Promise.all([
         fetch(

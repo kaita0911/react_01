@@ -31,7 +31,7 @@ export default function CategoryEdit() {
       const data = await res.json();
 
       if (data.status) {
-        setCompId(data.data);
+        setCompId(data.data.id);
       }
     };
 

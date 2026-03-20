@@ -36,7 +36,7 @@ switch ($act) {
         $module = isset($_GET['module']) ? $_GET['module'] : '';
 
         $sql = "
-        SELECT id
+        SELECT id,nhomcon
         FROM {$GLOBALS['db_sp']}.component
         WHERE `do` = ?
         LIMIT 1
@@ -46,7 +46,10 @@ switch ($act) {
 
         echo json_encode([
             "status" => true,
-            "data" => $row ? $row["id"] : null
+            "data" => $row ? [
+                "id" => $row["id"],
+                "nhomcon" => $row["nhomcon"]
+            ] : null
         ]);
 
         exit;

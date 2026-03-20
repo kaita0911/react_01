@@ -85,7 +85,7 @@ export default function DynamicModule() {
       const comp = await resModule.json();
       if (!comp.status) return;
 
-      const compId = comp.data;
+      const compId = comp.data.id;
 
       const [fieldsRes, langRes] = await Promise.all([
         fetch(

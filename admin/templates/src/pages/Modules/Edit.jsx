@@ -15,6 +15,7 @@ export default function Edit() {
   const [activeTab, setActiveTab] = useState(null);
   const [categories, setCategories] = useState([]);
   const [compId, setCompId] = useState(null);
+  const [compInfo, setCompInfo] = useState({});
   const [form, setForm] = useState({ languages: {} });
   const [fileMap, setFileMap] = useState({});
   const [gallery, setGallery] = useState([]);
@@ -30,7 +31,9 @@ export default function Edit() {
       const data = await res.json();
 
       if (data.status) {
-        setCompId(data.data);
+        setCompId(data.data.id);
+        const compInfolst = data.data;
+        setCompInfo(compInfolst); // ⭐ lưu toàn bộ component
       }
     };
 
@@ -388,7 +391,7 @@ export default function Edit() {
                 />
               </div>
             )}
-            {fieldMap.category && (
+            {compInfo.nhomcon && (
               <div className="form-group">
                 <label>Danh mục</label>
                 <div className="cat-tree">{renderTree(categories)}</div>

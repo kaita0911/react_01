@@ -13,7 +13,7 @@ export default function Create() {
   const [languages, setLanguages] = useState([]);
   const [categories, setCategories] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
-
+  const [compInfo, setCompInfo] = useState({});
   //const [compId, setCompId] = useState(null);
   const [fields, setFields] = useState([]);
 
@@ -38,14 +38,13 @@ export default function Create() {
       const langData = await langRes.json();
 
       if (!compData.status) return;
-      const comp = compData.data;
-      //setCompId(comp);
-
+      const compInfolst = compData.data;
+      setCompInfo(compInfolst); // ⭐ lưu toàn bộ component
       const [fieldRes, cateRes] = await Promise.all([
         fetch(
-          `/api/admin/component_fields.php?act=list&component=${comp}&target=article`
+          `/api/admin/component_fields.php?act=list&component=${compInfolst.id}&target=article`
         ),
-        fetch(`/api/admin/category.php?act=list&comp=${comp}`),
+        fetch(`/api/admin/category.php?act=list&comp=${compInfolst.id}`),
       ]);
 
       const fieldData = await fieldRes.json();
@@ -330,7 +329,7 @@ export default function Create() {
                 />
               </div>
             )}
-            {fieldMap.category && (
+            {compInfo.nhomcon && (
               <div className="form-group">
                 <label>Danh mục</label>
                 <div className="cat-tree">{renderTree(categories)}</div>

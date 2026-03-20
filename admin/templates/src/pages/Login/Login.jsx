@@ -10,6 +10,7 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   // ⭐ Nếu đã login, mở /login thì auto redirect
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
@@ -53,17 +54,29 @@ export default function Login() {
               handleLogin();
             }}
           >
-            <input
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <div className="login-card-input">
+              <input
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+              <i className="fa-solid fa-user"></i>
+            </div>
+            <div className="login-card-input password">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <i
+                className={`fa-solid ${
+                  showPassword ? "fa-eye-slash" : "fa-eye"
+                }`}
+                onClick={() => setShowPassword(!showPassword)}
+              ></i>
+            </div>
+
             {error && <p className="login-error">{error}</p>}
             <button type="submit">Login</button>
           </form>

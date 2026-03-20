@@ -11,16 +11,13 @@ function Other({ items }) {
       <div className="p-products">
         {items.map((item) => (
           <div className="product-item" key={item.id}>
-            <Link className="product-item__img" to={`/${item.unique_key}.html`}>
+            <Link className="product-item__img" to={`/${item.slug}.html`}>
               <img src={`${API_URL}/${item.img_thumb_vn}`} alt={item.name} />
             </Link>
 
             <div className="product-item__meta">
               <h3>
-                <Link
-                  className="product-item__ttl"
-                  to={`/${item.unique_key}.html`}
-                >
+                <Link className="product-item__ttl" to={`/${item.slug}.html`}>
                   {item.name}
                 </Link>
               </h3>
