@@ -5,41 +5,41 @@ import { API_URL } from "@/config";
 import Breadcrumb from "@/router/Breadcrumb";
 import { getPages } from "@/utils/pagination";
 import { useSearchParams } from "react-router-dom";
+import useLangPath from "@/utils/useLangPath";
 import "./News.scss";
 function List() {
+  const getLangPath = useLangPath(); // gọi hook
   const [news, setNews] = useState([]);
   const [title, setTitle] = useState("");
   const [pagination, setPagination] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
   const { lang } = useParams(); // đọc lang từ path
-  const currentLang = lang || "vi"; // default
-  console.log(currentLang);
   useEffect(() => {
-    fetch(`${API_URL}/api/news.php?act=list&page=${page}&lang=${currentLang}`)
+    fetch(`${API_URL}/api/news.php?act=list&page=${page}&lang=${lang}`)
       .then((res) => res.json())
       .then((data) => {
         setNews(data.items || []);
         setPagination(data.pagination);
       });
-  }, [page, currentLang]);
+  }, [page, lang]);
 
   // ===== LẤY MENU → TITLE =====
   useEffect(() => {
-    fetch(`${API_URL}/api/menu.php?lang=${currentLang}`)
+    fetch(`${API_URL}/api/menu.php?lang=${lang}`)
       .then((res) => res.json())
       .then((menu) => {
         const item = menu.find((m) => String(m.comp) === "1");
         if (item) setTitle(item.name_detail);
       });
-  }, [currentLang]);
+  }, [lang]);
   // ⭐ Lấy thông tin công ty
   const [info, setInfo] = useState(null);
   useEffect(() => {
-    fetch(`${API_URL}/api/infos.php?lang=${currentLang}`)
+    fetch(`${API_URL}/api/infos.php?lang=${lang}`)
       .then((res) => res.json())
       .then((data) => setInfo(data));
-  }, [currentLang]);
+  }, [lang]);
   return (
     <div className="container">
       <Breadcrumb comp="1" />
@@ -56,18 +56,19 @@ function List() {
           <div className="news-item" key={item.id}>
             <Link
               className="news-item__img"
-              to={`/${currentLang}/${item.slug}.html`}
+              to={getLangPath(item.slug, ".html")}
             >
               {item.name}
-              <img src={`${API_URL}/${item.img_thumb_vn}`} alt={item.name} />
+              <img alt={item.name} src={`${API_URL}/${item.img_thumb_vn}`} />
             </Link>
             <div className="news-item__meta">
               <h3>
                 <Link
+                  title={item.name}
                   className="news-item__ttl"
-                  to={`/${currentLang}/${item.slug}.html`}
+                  to={getLangPath(item.slug, ".html")}
                 >
-                  {item.title}
+                  {item.name}
                 </Link>
               </h3>
 

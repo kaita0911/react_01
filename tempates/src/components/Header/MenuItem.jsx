@@ -9,7 +9,7 @@ function MenuItem({ item, lang }) {
         to={url}
         className={({ isActive }) => "menu-item" + (isActive ? " active" : "")}
       >
-        {item.name_detail}
+        {item.name}
       </NavLink>
       {item.categories && item.categories.length > 0 && (
         <ul className="submenu">

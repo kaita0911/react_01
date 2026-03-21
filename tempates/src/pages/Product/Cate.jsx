@@ -3,11 +3,12 @@ import { API_URL } from "@/config";
 import Seo from "@/components/Seo";
 import Breadcrumb from "@/router/Breadcrumb";
 import { getPages } from "@/utils/pagination";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useParams } from "react-router-dom";
 import ProductItem from "./ProductItem";
 import "./Product.scss";
 function Cate({ data }) {
   const [news, setNews] = useState([]);
+  const { lang } = useParams(); // đọc lang từ path
   const [pagination, setPagination] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
@@ -15,7 +16,9 @@ function Cate({ data }) {
   const [category, setCategory] = useState(null);
   useEffect(() => {
     if (!data?.id) return;
-    fetch(`${API_URL}/api/products.php?act=sub&cate_id=${data.id}&page=${page}`)
+    fetch(
+      `${API_URL}/api/products.php?act=sub&cate_id=${data.id}&page=${page}&lang=${lang}`
+    )
       .then((res) => res.json())
       .then((data) => {
         setNews(data.items || []);
@@ -23,7 +26,7 @@ function Cate({ data }) {
         setCategoryPath(data.category_path || []);
         setCategory(data.category || null);
       });
-  }, [data?.id, page]);
+  }, [data?.id, page, lang]);
 
   return (
     <div className="container">
@@ -37,7 +40,7 @@ function Cate({ data }) {
       <h1 className="ttl01">{category?.name}</h1>
       <div className="p-products --mrg-top">
         {news.map((item) => (
-          <ProductItem key={item.id} item={item} />
+          <ProductItem key={item.id} item={item} lang={lang} />
         ))}
       </div>
       {pagination && pagination.totalPages > 1 && (

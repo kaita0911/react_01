@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Editor from "@/utils/Ckeditor";
 import UploadImage from "@/pages/components/UploadImage";
 import UploadMultipleImages from "@/pages/components/UploadMultipleImages";
@@ -9,7 +9,7 @@ import { slugify } from "@/utils/slugify";
 export default function Create() {
   const { module } = useParams();
   const navigate = useNavigate();
-
+  const nameRefs = useRef({});
   const [languages, setLanguages] = useState([]);
   const [categories, setCategories] = useState([]);
   const [activeTab, setActiveTab] = useState(null);
@@ -131,10 +131,12 @@ export default function Create() {
     const name = form.languages?.[defaultLang.id]?.name;
 
     if (!name || name.trim() === "") {
-      setActiveTab(defaultLang.id);
+      setActiveTab(defaultLang.id); // chuyển về tab đúng
+
       setTimeout(() => {
-        document.querySelector("input")?.focus();
-      }, 100);
+        nameRefs.current[defaultLang.id]?.focus(); // 👈 focus đúng input
+      }, 0);
+
       return;
     }
 
@@ -242,12 +244,15 @@ export default function Create() {
                   <div className="form-group">
                     <label>Tên</label>
                     <input
+                      ref={(el) => (nameRefs.current[lang.id] = el)}
                       type="text"
                       value={langData.name || ""}
                       onChange={(e) => {
                         const v = e.target.value;
-                        handleLangChange(lang.id, "name", v);
-                        handleLangChange(lang.id, "slug", slugify(v));
+                        handleLangChange(lang.id, {
+                          name: v,
+                          slug: slugify(v),
+                        });
                       }}
                     />
                   </div>

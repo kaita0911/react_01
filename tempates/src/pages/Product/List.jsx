@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
+import { useSearchParams, useParams } from "react-router-dom";
 import { API_URL } from "@/config";
 import Seo from "@/components/Seo";
 import Breadcrumb from "@/router/Breadcrumb";
 import { getPages } from "@/utils/pagination";
-import { useSearchParams } from "react-router-dom";
+
 import ProductItem from "./ProductItem";
 import "./Product.scss";
 function List() {
@@ -12,15 +13,16 @@ function List() {
   const [pagination, setPagination] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
+  const { lang } = useParams(); // đọc lang từ path
 
   useEffect(() => {
-    fetch(`${API_URL}/api/products.php?act=list&page=${page}`)
+    fetch(`${API_URL}/api/products.php?act=list&page=${page}&lang=${lang}`)
       .then((res) => res.json())
       .then((data) => {
         setNews(data.items || []);
         setPagination(data.pagination);
       });
-  }, [page]);
+  }, [page, lang]);
   // ===== LẤY MENU → TITLE =====
   useEffect(() => {
     fetch(`${API_URL}/api/menu.php`)
@@ -33,10 +35,10 @@ function List() {
   // ⭐ Lấy thông tin công ty
   const [info, setInfo] = useState(null);
   useEffect(() => {
-    fetch(`${API_URL}/api/infos.php`)
+    fetch(`${API_URL}/api/infos.php?lang=${lang}`)
       .then((res) => res.json())
       .then((data) => setInfo(data));
-  }, []);
+  }, [lang]);
   return (
     <div className="container">
       <Breadcrumb comp="2" />

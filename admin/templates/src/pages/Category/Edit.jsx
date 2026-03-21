@@ -96,8 +96,6 @@ export default function CategoryEdit() {
     return result;
   };
   useEffect(() => {
-    if (!id || !languages.length || !fields.length) return;
-
     const loadDetail = async () => {
       const res = await fetch(`/api/admin/category.php?act=detail&id=${id}`);
       const data = await res.json();
@@ -296,9 +294,10 @@ export default function CategoryEdit() {
                       value={langData.name || ""}
                       onChange={(e) => {
                         const v = e.target.value;
-
-                        handleLangChange(lang.id, "name", v);
-                        handleLangChange(lang.id, "slug", slugify(v));
+                        handleLangChange(lang.id, {
+                          name: v,
+                          slug: slugify(v),
+                        });
                       }}
                     />
                   </div>

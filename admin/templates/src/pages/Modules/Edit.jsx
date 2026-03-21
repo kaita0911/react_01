@@ -308,8 +308,10 @@ export default function Edit() {
                       value={langData.name || ""}
                       onChange={(e) => {
                         const v = e.target.value;
-                        handleLangChange(lang.id, "name", v);
-                        handleLangChange(lang.id, "slug", slugify(v));
+                        handleLangChange(lang.id, {
+                          name: v,
+                          slug: slugify(v),
+                        });
                       }}
                     />
                   </div>

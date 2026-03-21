@@ -82,164 +82,23 @@ function slugify($str)
         return '';
     }
 
-    // Đưa về chữ thường
+    // lowercase
     $str = mb_strtolower($str, 'UTF-8');
 
-    // Bỏ dấu tiếng Việt
-    $search = [
-        // a
-        'à',
-        'á',
-        'ạ',
-        'ả',
-        'ã',
-        'â',
-        'ầ',
-        'ấ',
-        'ậ',
-        'ẩ',
-        'ẫ',
-        'ă',
-        'ằ',
-        'ắ',
-        'ặ',
-        'ẳ',
-        'ẵ',
-        // e
-        'è',
-        'é',
-        'ẹ',
-        'ẻ',
-        'ẽ',
-        'ê',
-        'ề',
-        'ế',
-        'ệ',
-        'ể',
-        'ễ',
-        // i
-        'ì',
-        'í',
-        'ị',
-        'ỉ',
-        'ĩ',
-        // o
-        'ò',
-        'ó',
-        'ọ',
-        'ỏ',
-        'õ',
-        'ô',
-        'ồ',
-        'ố',
-        'ộ',
-        'ổ',
-        'ỗ',
-        'ơ',
-        'ờ',
-        'ớ',
-        'ợ',
-        'ở',
-        'ỡ',
-        // u
-        'ù',
-        'ú',
-        'ụ',
-        'ủ',
-        'ũ',
-        'ư',
-        'ừ',
-        'ứ',
-        'ự',
-        'ử',
-        'ữ',
-        // y
-        'ỳ',
-        'ý',
-        'ỵ',
-        'ỷ',
-        'ỹ',
-        // d
-        'đ'
-    ];
-
-    $replace = [
-        'a',
-        'a',
-        'a',
-        'a',
-        'a',
-        'a',
-        'a',
-        'a',
-        'a',
-        'a',
-        'a',
-        'a',
-        'a',
-        'a',
-        'a',
-        'a',
-        'a',
-        'e',
-        'e',
-        'e',
-        'e',
-        'e',
-        'e',
-        'e',
-        'e',
-        'e',
-        'e',
-        'e',
-        'i',
-        'i',
-        'i',
-        'i',
-        'i',
-        'o',
-        'o',
-        'o',
-        'o',
-        'o',
-        'o',
-        'o',
-        'o',
-        'o',
-        'o',
-        'o',
-        'o',
-        'o',
-        'o',
-        'o',
-        'o',
-        'o',
-        'u',
-        'u',
-        'u',
-        'u',
-        'u',
-        'u',
-        'u',
-        'u',
-        'u',
-        'u',
-        'u',
-        'y',
-        'y',
-        'y',
-        'y',
-        'y',
-        'd'
-    ];
+    // bỏ dấu
+    $search = [/* giữ nguyên như bạn */];
+    $replace = [/* giữ nguyên như bạn */];
 
     $str = str_replace($search, $replace, $str);
 
-    // Loại bỏ ký tự đặc biệt, chỉ giữ chữ + số + space
+    // chỉ giữ a-z 0-9 và space
     $str = preg_replace('/[^a-z0-9\s]/', '', $str);
 
-    // Chuẩn hóa khoảng trắng
+    // chuẩn hóa khoảng trắng
     $str = preg_replace('/\s+/', ' ', trim($str));
+
+    // 🔥 THÊM DÒNG NÀY
+    $str = str_replace(' ', '-', $str);
 
     return $str;
 }

@@ -3,7 +3,7 @@
 function getCategoryTree($sp, $db_sp, $langid)
 {
     $sql_cat = "SELECT c.id, c.comp, c.active,
-               d.name AS name_detail,
+               d.name,
                d.slug,
                c.img_vn
         FROM {$db_sp}.categories AS c

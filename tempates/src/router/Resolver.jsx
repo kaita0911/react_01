@@ -10,16 +10,15 @@ import Contact from "../pages/Contact/";
 import P404 from "../pages/P404/";
 
 function Resolver() {
-  const { slug } = useParams();
+  const { slug, lang } = useParams();
   const [data, setData] = useState(null);
   useEffect(() => {
-    fetch(`${API_URL}/api/resolve.php?slug=${slug}`)
+    fetch(`${API_URL}/api/resolve.php?slug=${slug}&lang=${lang}`)
       .then((res) => res.json())
       .then((res) => {
-        // console.log(res)
         setData(res);
       });
-  }, [slug]);
+  }, [slug, lang]);
 
   if (!data) return;
 

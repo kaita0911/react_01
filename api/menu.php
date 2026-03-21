@@ -6,8 +6,18 @@ header("Access-Control-Allow-Origin: *");
 include_once(__DIR__ . "/../includes/config.php");
 include_once(__DIR__ . "/../includes/get_languages.php");
 require_once __DIR__ . "/../functions/category-tree.php";
-
 global $db_sp, $sp, $langid;
+$langCode     = isset($_GET['lang']) ? $_GET['lang'] : '';
+// Lấy từ DB → map code -> id
+$langMap = [];
+$languages = $GLOBALS['sp']->getAll("SELECT id, code FROM language");
+foreach($languages as $row) {
+    $langMap[$row['code']] = $row['id'];
+}
+
+// Nếu code không hợp lệ, default = 1 (vi)
+$langid = isset($langMap[$langCode]) ? $langMap[$langCode] : 1;
+
 
 /////////////////////////////////////
 // 1. LẤY CATEGORY TREE (FILE MỚI)
@@ -20,7 +30,7 @@ $categoryTree = getCategoryTree($sp, $db_sp, $langid);
 /////////////////////////////////////
 
 $sql = "SELECT m.id, m.comp,
-               d.name AS name_detail,
+               d.name,
                d.slug,
                m.has_sub
         FROM {$db_sp}.menu AS m

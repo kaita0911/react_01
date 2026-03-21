@@ -140,7 +140,7 @@ if ($act === "detail") {
     // ===== Tin liên quan =====
     $sql_related = "
         SELECT a.id, d.slug, a.img_thumb_vn, a.dated,
-               d.name AS title
+               d.name
         FROM {$GLOBALS['db_sp']}.articlelist AS a
         LEFT JOIN {$GLOBALS['db_sp']}.articlelist_detail AS d
             ON d.articlelist_id = a.id AND d.languageid = {$langid}

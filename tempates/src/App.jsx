@@ -1,7 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+
 import Resolver from "./router/Resolver";
 import HtmlRouter from "./router/HtmlRouter";
-import { Routes, Route, Navigate } from "react-router-dom";
+
 import Cart from "./pages/Cart/Cart";
 import { CartProvider } from "@/context/CartContext";
 import CartToast from "@/context/CartToast";
@@ -15,23 +17,42 @@ import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import { WishlistProvider } from "@/context/WishlistContext";
 import Wishlist from "./pages/Wishlist";
-
+import { API_URL } from "@/config";
 function App() {
+  const [loading, setLoading] = useState(true);
+  const [defaultLang, setDefaultLang] = useState("vi");
   useEffect(() => {
-    const visited = sessionStorage.getItem("visited");
-
-    if (!visited) {
-      fetch("/api/visit.php");
-      sessionStorage.setItem("visited", "1");
-    }
+    fetch(`${API_URL}/api/languages.php`)
+      .then((res) => res.json())
+      .then((data) => {
+        //console.log("API trả về toàn bộ data:", data); // 🔥 log cả object
+        const lang = data.default_language?.code || "vi";
+        //console.log("Ngôn ngữ mặc định:", lang); // 🔥 log code mặc định
+        setDefaultLang(lang);
+      })
+      .catch((err) => console.error("Lỗi fetch languages:", err))
+      .finally(() => setLoading(false));
   }, []);
+
+  if (loading) return <div>Đang tải...</div>;
+  // useEffect(() => {
+  //   const visited = sessionStorage.getItem("visited");
+
+  //   if (!visited) {
+  //     fetch("/api/visit.php");
+  //     sessionStorage.setItem("visited", "1");
+  //   }
+  // }, []);
   return (
     <>
       <WishlistProvider>
         <CartProvider>
           <Routes>
             {/* redirect root → /vi */}
-            <Route path="/" element={<Navigate to="/vi" />} />
+            <Route
+              path="/"
+              element={<Navigate to={`/${defaultLang}`} replace />}
+            />
 
             {/* group theo lang */}
             <Route

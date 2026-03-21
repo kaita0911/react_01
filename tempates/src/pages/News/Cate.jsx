@@ -1,21 +1,26 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import Seo from "@/components/Seo";
 import { API_URL } from "@/config";
 import Breadcrumb from "@/router/Breadcrumb";
 import { getPages } from "@/utils/pagination";
 import { useSearchParams } from "react-router-dom";
+import useLangPath from "@/utils/useLangPath";
 import "./News.scss";
 function Cate({ data }) {
+  const getLangPath = useLangPath(); // gọi hook
   const [news, setNews] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
   const [categoryPath, setCategoryPath] = useState([]);
   const [category, setCategory] = useState(null);
+  const { lang } = useParams(); // đọc lang từ path
   useEffect(() => {
     if (!data?.id) return;
-    fetch(`${API_URL}/api/news.php?act=sub&cate_id=${data.id}&page=${page}`)
+    fetch(
+      `${API_URL}/api/news.php?act=sub&cate_id=${data.id}&page=${page}&lang=${lang}`
+    )
       .then((res) => res.json())
       .then((data) => {
         setNews(data.items || []);
@@ -23,7 +28,7 @@ function Cate({ data }) {
         setCategoryPath(data.category_path || []);
         setCategory(data.category || null);
       });
-  }, [data?.id, page]);
+  }, [data?.id, page, lang]);
 
   return (
     <div className="container">
@@ -38,13 +43,19 @@ function Cate({ data }) {
       <div className="f-articles">
         {news.map((item) => (
           <div className="news-item" key={item.id}>
-            <Link className="news-item__img" to={`/${item.slug}.html`}>
+            <Link
+              className="news-item__img"
+              to={getLangPath(item.slug, ".html")}
+            >
               {item.name}
               <img src={`${API_URL}/${item.img_thumb_vn}`} alt={item.name} />
             </Link>
             <div className="news-item__meta">
               <h3>
-                <Link className="news-item__ttl" to={`/${item.slug}.html`}>
+                <Link
+                  className="news-item__ttl"
+                  to={getLangPath(item.slug, ".html")}
+                >
                   {item.title}
                 </Link>
               </h3>

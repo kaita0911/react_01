@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { slugify } from "@/utils/slugify";
 import UploadImage from "@/pages/components/UploadImage";
 import Editor from "@/utils/Ckeditor";
@@ -7,7 +7,7 @@ import MetaKeywords from "@/utils/MetaKeywords";
 export default function CategoryCreate() {
   const { module } = useParams();
   const navigate = useNavigate();
-
+  const nameRefs = useRef({});
   const [compId, setCompId] = useState(null);
   const [fields, setFields] = useState([]);
   const [languages, setLanguages] = useState([]);
@@ -118,7 +118,15 @@ export default function CategoryCreate() {
   const handleCreate = async () => {
     const defaultLang = languages[0];
     const name = form.languages?.[defaultLang.id]?.name;
-    if (!name || name.trim() === "") return;
+    if (!name || name.trim() === "") {
+      setActiveTab(defaultLang.id); // chuyển về tab đúng
+
+      setTimeout(() => {
+        nameRefs.current[defaultLang.id]?.focus(); // 👈 focus đúng input
+      }, 0);
+
+      return;
+    }
 
     setSaving(true); // bắt đầu
     try {
@@ -207,11 +215,14 @@ export default function CategoryCreate() {
                     <label>Tên</label>
 
                     <input
+                      ref={(el) => (nameRefs.current[lang.id] = el)}
                       value={langData.name || ""}
                       onChange={(e) => {
                         const v = e.target.value;
-                        handleLangChange(lang.id, "name", v);
-                        handleLangChange(lang.id, "slug", slugify(v));
+                        handleLangChange(lang.id, {
+                          name: v,
+                          slug: slugify(v),
+                        });
                       }}
                     />
                   </div>

@@ -4,15 +4,20 @@ import Seo from "@/components/Seo";
 import { API_URL } from "@/config";
 import { Link } from "react-router-dom";
 import Breadcrumb from "@/router/Breadcrumb";
+import useLang from "@/context/useLang";
+import useLangPath from "@/utils/useLangPath";
+import useScrollToTop from "@/utils/useScrollToTop";
 function NewsDetail() {
-  const { slug } = useParams();
+  const getLangPath = useLangPath(); // gọi hook
+  const { slug, lang } = useParams();
   const [news, setNews] = useState(null);
-
+  const { t } = useLang();
+  useScrollToTop(slug);
   useEffect(() => {
-    fetch(`${API_URL}/api/news.php?act=detail&slug=${slug}`)
+    fetch(`${API_URL}/api/news.php?act=detail&slug=${slug}&lang=${lang}`)
       .then((res) => res.json())
       .then(setNews);
-  }, [slug]);
+  }, [slug, lang]);
   if (!news) return;
 
   return (
@@ -35,15 +40,19 @@ function NewsDetail() {
 
         {news.related?.length > 0 && (
           <div className="related-articles">
-            <h2 className="ttl02">Tin liên quan</h2>
+            <h2 className="ttl02">{t.related_news}</h2>
             <ul className="related-articles__lst">
               {news.related.map((item) => (
                 <li key={item.id} className="related-item">
                   <h3>
-                    <Link className="hover" to={`/${item.slug}.html`}>
-                      {item.title}
+                    <Link
+                      title={item.name}
+                      className="hover"
+                      to={getLangPath(item.slug, ".html")}
+                    >
+                      {item.name}
                     </Link>
-                  </h3>{" "}
+                  </h3>
                   - ({item.dated})
                 </li>
               ))}

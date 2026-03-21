@@ -28,9 +28,9 @@ if (!$q) {
 
 $where  = '';
 $params = array();
-$keyword     = vn_to_slug($q);
+$keyword     = slugify($q);
 if ($keyword !== '') {
-    $where    = " AND d.name LIKE ? ";
+    $where    = " AND d.slug LIKE ? ";
     $params[] = '%' . $keyword . '%';
 }
 $sql = "
@@ -38,7 +38,7 @@ SELECT
     a.id,
     a.img_thumb_vn,
     d.name,
-    d.slug AS slug,
+    d.slug,
     d.short,
     p.price,
     p.priceold

@@ -7,19 +7,22 @@ import Breadcrumb from "@/router/Breadcrumb";
 import Other from "./Other";
 import ProductGallery from "./ProductGallery";
 import { useCart } from "@/context/CartContext";
-
+import useLang from "@/context/useLang";
+import useScrollToTop from "@/utils/useScrollToTop";
 function Detail() {
-  const { slug } = useParams();
+  const { slug, lang } = useParams();
   const [news, setNews] = useState(null);
+  const { t } = useLang();
   const { addToCart, buyNow } = useCart();
   const [qty, setQuantity] = useState(1);
+  useScrollToTop(slug);
   useEffect(() => {
-    fetch(`${API_URL}/api/products.php?act=detail&slug=${slug}`)
+    fetch(`${API_URL}/api/products.php?act=detail&slug=${slug}&lang=${lang}`)
       .then((res) => res.json())
       .then((data) => {
         setNews(data);
       });
-  }, [slug]);
+  }, [slug, lang]);
 
   if (!news) return;
 
@@ -142,7 +145,7 @@ function Detail() {
               </div>
             </div>
           </div>
-          <div className="artseed-detail__ttl">Chi tiết sản phẩm</div>
+          <div className="artseed-detail__ttl">{t.product_detail}</div>
           <div
             className="artseed-detail"
             dangerouslySetInnerHTML={{ __html: news.content }}

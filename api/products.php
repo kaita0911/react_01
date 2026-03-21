@@ -11,7 +11,16 @@ include_once(__DIR__ . "/../functions/function-api.php");
 $act     = isset($_GET['act']) ? $_GET['act'] : 'list';
 $slug    = isset($_GET['slug']) ? $_GET['slug'] : '';
 $cate_id = isset($_GET['cate_id']) ? (int)$_GET['cate_id'] : 0;
-$langid     = 1; // tùy hệ thống bạn
+$langCode     = isset($_GET['lang']) ? $_GET['lang'] : '';
+// Lấy từ DB → map code -> id
+$langMap = [];
+$languages = $GLOBALS['sp']->getAll("SELECT id, code FROM language");
+foreach($languages as $row) {
+    $langMap[$row['code']] = $row['id'];
+}
+
+// Nếu code không hợp lệ, default = 1 (vi)
+$langid = isset($langMap[$langCode]) ? $langMap[$langCode] : 1;
 
 if ($act === "detail") {
 
@@ -176,7 +185,7 @@ if ($act === "detail") {
         "id"        => $rs['articlelist_id'],
         "des" => $rs['des'],
         "keyword" => $rs['keyword'],
-        "title"     => $rs['name'],
+        "name"     => $rs['name'],
         "slug" => $rs['slug'],
         "short"   => $rs['short'],
         "content"   => $rs['content'],
