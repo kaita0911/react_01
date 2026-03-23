@@ -4,10 +4,12 @@ import Seo from "@/components/Seo";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRef } from "react";
+import useLang from "@/context/useLang";
 import "./Cart.scss";
 
 function Checkout() {
   const { cart, totalPrice, totalQty, clearCart } = useCart();
+  const { t } = useLang();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -138,10 +140,10 @@ function Checkout() {
 
   return (
     <>
-      <Seo title="Thanh toán" />
+      <Seo title={t.pay} />
       <main>
         <div className="container">
-          <h1 className="ttl-cart">Thanh toán</h1>
+          <h1 className="ttl-cart">{t.pay}</h1>
 
           <div className="cart-box">
             {/* ===== LEFT — FORM ===== */}

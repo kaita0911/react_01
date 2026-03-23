@@ -5,17 +5,17 @@ import NewsDetail from "../pages/News/Detail";
 import ProductDetail from "../pages/Product/Detail";
 import P404 from "../pages/P404/";
 function HtmlRouter() {
-  const { slug, lang } = useParams();
+  const { slug } = useParams();
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/resolve.php?slug=${slug}&lang=${lang}`)
+    fetch(`${API_URL}/api/resolve.php?slug=${slug}`)
       .then((res) => res.json())
       .then((res) => {
         // console.log(res)
         setData(res);
       });
-  }, [slug, lang]);
+  }, [slug]);
 
   if (!data) return;
 

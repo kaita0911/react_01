@@ -5,10 +5,13 @@ import Breadcrumb from "@/router/Breadcrumb";
 import { getPages } from "@/utils/pagination";
 import { useSearchParams, useParams } from "react-router-dom";
 import ProductItem from "./ProductItem";
+import { useLanguage } from "@/context/useLanguage";
 import "./Product.scss";
 function Cate({ data }) {
+  const { lang: urlLang } = useParams(); // lang từ URL
+  const { defaultLang } = useLanguage();
+  const lang = urlLang || defaultLang;
   const [news, setNews] = useState([]);
-  const { lang } = useParams(); // đọc lang từ path
   const [pagination, setPagination] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;

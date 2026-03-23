@@ -7,9 +7,15 @@ import Breadcrumb from "@/router/Breadcrumb";
 import useLang from "@/context/useLang";
 import useLangPath from "@/utils/useLangPath";
 import useScrollToTop from "@/utils/useScrollToTop";
+import { useLanguage } from "@/context/useLanguage";
 function NewsDetail() {
   const getLangPath = useLangPath(); // gọi hook
-  const { slug, lang } = useParams();
+  const { lang: urlLang } = useParams(); // lang từ URL
+  // Lấy từ Context
+  const { defaultLang } = useLanguage();
+  // fallback lang nếu URL không có
+  const lang = urlLang || defaultLang;
+  const { slug } = useParams();
   const [news, setNews] = useState(null);
   const { t } = useLang();
   useScrollToTop(slug);
@@ -18,6 +24,7 @@ function NewsDetail() {
       .then((res) => res.json())
       .then(setNews);
   }, [slug, lang]);
+
   if (!news) return;
 
   return (

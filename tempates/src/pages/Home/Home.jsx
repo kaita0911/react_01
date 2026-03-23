@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import Seo from "@/components/Seo";
 import { API_URL } from "@/config";
 import { Link } from "react-router-dom";
@@ -8,8 +9,15 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import "./Home.scss";
-
+import useLang from "@/context/useLang";
+import useLangPath from "@/utils/useLangPath";
+import { useLanguage } from "@/context/useLanguage";
 function Home() {
+  const { lang: urlLang } = useParams(); // lang từ URL
+  const { defaultLang } = useLanguage();
+  const lang = urlLang || defaultLang;
+  const getLangPath = useLangPath(); // gọi hook
+  const { t } = useLang();
   const { addToCart } = useCart();
   const { wishlist, toggleWishlist } = useWishlist();
   const [quickItem, setQuickItem] = useState(null);
@@ -23,10 +31,10 @@ function Home() {
   // ⭐ Lấy thông tin công ty
   const [info, setInfo] = useState(null);
   useEffect(() => {
-    fetch(`${API_URL}/api/infos.php`)
+    fetch(`${API_URL}/api/infos.php?lang=${lang}`)
       .then((res) => res.json())
       .then((data) => setInfo(data));
-  }, []);
+  }, [lang]);
 
   const [bannerTop, setBannerTop] = useState([]);
   const [bannerMid, setBannerMid] = useState([]);
@@ -85,23 +93,23 @@ function Home() {
     ],
   };
   useEffect(() => {
-    fetch(`${API_URL}/api/product_hot.php`)
+    fetch(`${API_URL}/api/product_hot.php?lang=${lang}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
           setProducts(data.data);
         }
       });
-  }, []);
+  }, [lang]);
   ///product-cate
   const [products_categories, setCategories] = useState([]);
   useEffect(() => {
-    fetch(`${API_URL}/api/product_home_categories.php`)
+    fetch(`${API_URL}/api/product_home_categories.php?lang=${lang}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setCategories(data.data);
       });
-  }, []);
+  }, [lang]);
 
   return (
     <>
@@ -150,7 +158,7 @@ function Home() {
                     <div key={item.id} className="product-item">
                       <Link
                         className="product-item__img"
-                        to={`/${item.slug}.html`}
+                        to={getLangPath(item.slug, ".html")}
                         title={item.name}
                       >
                         <img
@@ -164,7 +172,7 @@ function Home() {
                         <h3>
                           <Link
                             className="product-item__ttl"
-                            to={`/${item.slug}.html`}
+                            to={getLangPath(item.slug, ".html")}
                             title={item.name}
                           >
                             {item.name}
@@ -176,7 +184,7 @@ function Home() {
                             {Number(item.price) > 0
                               ? Number(item.price).toLocaleString("vi-VN") +
                                 " đ"
-                              : "Liên hệ"}
+                              : t.contact}
                           </span>
 
                           {Number(item.priceold) > 0 && (
@@ -201,14 +209,14 @@ function Home() {
                               }
                               className="fa-solid fa-cart-shopping cart-icon"
                             ></i>
-                            <span className="tooltip">Thêm vào giỏ</span>
+                            <span className="tooltip">{t.addtocart}</span>
                           </div>
                           <div className="action-item">
                             <i
                               onClick={() => openQuickView(item)}
                               className="fa-regular fa-eye view-icon"
                             ></i>
-                            <span className="tooltip">Xem nhanh</span>
+                            <span className="tooltip">{t.quickview}</span>
                           </div>
                           <div className="action-item">
                             <i
@@ -220,7 +228,7 @@ function Home() {
                               }
                             ></i>
                             <span className="tooltip">
-                              {liked ? "Bỏ yêu thích" : "Yêu thích"}
+                              {liked ? t.dislike : t.like}
                             </span>
                           </div>
                         </div>
@@ -256,7 +264,7 @@ function Home() {
                       <div key={item.id} className="product-item">
                         <Link
                           className="product-item__img"
-                          to={`/${item.slug}.html`}
+                          to={getLangPath(item.slug, ".html")}
                           title={item.name}
                         >
                           <img
@@ -270,7 +278,7 @@ function Home() {
                           <h3>
                             <Link
                               className="product-item__ttl"
-                              to={`/${item.slug}.html`}
+                              to={getLangPath(item.slug, ".html")}
                             >
                               {item.name}
                             </Link>
@@ -281,7 +289,7 @@ function Home() {
                               {Number(item.price) > 0
                                 ? Number(item.price).toLocaleString("vi-VN") +
                                   " đ"
-                                : "Liên hệ"}
+                                : t.contact}
                             </span>
 
                             {Number(item.priceold) > 0 && (
@@ -305,14 +313,14 @@ function Home() {
                                 }
                                 className="fa-solid fa-cart-shopping cart-icon"
                               ></i>
-                              <span className="tooltip">Thêm vào giỏ</span>
+                              <span className="tooltip">{t.addtocart}</span>
                             </div>
                             <div className="action-item">
                               <i
                                 onClick={() => openQuickView(item)}
                                 className="fa-regular fa-eye view-icon"
                               ></i>
-                              <span className="tooltip">Xem nhanh</span>
+                              <span className="tooltip">{t.quickview}</span>
                             </div>
                             <div className="action-item">
                               <i
@@ -324,7 +332,7 @@ function Home() {
                                 }
                               ></i>
                               <span className="tooltip">
-                                {liked ? "Bỏ yêu thích" : "Yêu thích"}
+                                {liked ? t.dislike : t.like}
                               </span>
                             </div>
                           </div>
@@ -362,7 +370,7 @@ function Home() {
                     <span className="price-current">
                       {Number(quickItem.price) > 0
                         ? Number(quickItem.price).toLocaleString("vi-VN") + " đ"
-                        : "Liên hệ"}
+                        : t.contact}
                     </span>
 
                     {Number(quickItem.priceold) > 0 && (

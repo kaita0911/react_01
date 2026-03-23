@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-
+import { LanguageProvider } from "@/context/LanguageProvider";
 import Resolver from "./router/Resolver";
 import HtmlRouter from "./router/HtmlRouter";
 
 import Cart from "./pages/Cart/Cart";
-import { CartProvider } from "@/context/CartContext";
+import { CartProvider } from "@/context/CartProvider";
 import CartToast from "@/context/CartToast";
 import Checkout from "./pages/Cart/Checkout";
 import Tag from "./pages/Tag";
@@ -18,75 +18,106 @@ import "slick-carousel/slick/slick-theme.css";
 import { WishlistProvider } from "@/context/WishlistContext";
 import Wishlist from "./pages/Wishlist";
 import { API_URL } from "@/config";
+
 function App() {
   const [loading, setLoading] = useState(true);
-  const [defaultLang, setDefaultLang] = useState("vi");
+  const [defaultLang, setDefaultLang] = useState(null);
+  const [languages, setLanguages] = useState([]);
+  const [singleLang, setSingleLang] = useState(false);
+
   useEffect(() => {
-    fetch(`${API_URL}/api/languages.php`)
-      .then((res) => res.json())
-      .then((data) => {
-        //console.log("API trả về toàn bộ data:", data); // 🔥 log cả object
-        const lang = data.default_language?.code || "vi";
-        //console.log("Ngôn ngữ mặc định:", lang); // 🔥 log code mặc định
-        setDefaultLang(lang);
-      })
-      .catch((err) => console.error("Lỗi fetch languages:", err))
-      .finally(() => setLoading(false));
+    const fetchLanguages = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/languages.php`);
+        const data = await res.json();
+        //console.log(data);
+        const langs = data.languages || [];
+        setLanguages(langs);
+
+        // Lấy code ngôn ngữ mặc định do backend quyết định
+        const defaultCode =
+          data.default_language?.code || langs[0]?.code || "vi";
+        setDefaultLang(defaultCode);
+
+        // Nếu chỉ có 1 ngôn ngữ, đánh dấu singleLang
+        setSingleLang(langs.length === 1);
+      } catch (err) {
+        console.error("Lỗi fetch languages:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLanguages();
   }, []);
 
-  if (loading) return <div>Đang tải...</div>;
-  // useEffect(() => {
-  //   const visited = sessionStorage.getItem("visited");
+  if (loading || !defaultLang) return <div>Đang tải...</div>;
 
-  //   if (!visited) {
-  //     fetch("/api/visit.php");
-  //     sessionStorage.setItem("visited", "1");
-  //   }
-  // }, []);
   return (
-    <>
+    <LanguageProvider
+      languages={languages}
+      singleLang={singleLang}
+      defaultLang={defaultLang}
+    >
       <WishlistProvider>
         <CartProvider>
           <Routes>
-            {/* redirect root → /vi */}
-            <Route
-              path="/"
-              element={<Navigate to={`/${defaultLang}`} replace />}
-            />
-
-            {/* group theo lang */}
-            <Route
-              path="/:lang/*"
-              element={
-                <>
-                  <Header />
-
-                  <Routes>
-                    {/* HOME */}
-                    <Route index element={<Home />} />
-
-                    {/* route cụ thể */}
-                    <Route path="tag/:slug" element={<Tag />} />
-                    <Route path="cart" element={<Cart />} />
-                    <Route path="thanh-toan" element={<Checkout />} />
-                    <Route path="search" element={<Search />} />
-                    <Route path="wishlist" element={<Wishlist />} />
-
-                    {/* route động */}
-                    <Route path=":slug.html" element={<HtmlRouter />} />
-                    <Route path=":slug" element={<Resolver />} />
-                  </Routes>
-
-                  <Footer />
-                </>
-              }
-            />
+            {singleLang ? (
+              // CHỈ 1 ngôn ngữ → không dùng /:lang
+              <Route
+                path="/*"
+                element={
+                  <>
+                    <Header />
+                    <Routes>
+                      <Route index element={<Home />} />
+                      <Route path="tag/:slug" element={<Tag />} />
+                      <Route path="cart" element={<Cart />} />
+                      <Route path="thanh-toan" element={<Checkout />} />
+                      <Route path="search" element={<Search />} />
+                      <Route path="wishlist" element={<Wishlist />} />
+                      <Route path=":slug.html" element={<HtmlRouter />} />
+                      <Route path=":slug" element={<Resolver />} />
+                    </Routes>
+                    <Footer />
+                  </>
+                }
+              />
+            ) : (
+              // NHIỀU ngôn ngữ → dùng /:lang
+              <>
+                {/* redirect root "/" sang defaultLang */}
+                <Route
+                  path="/"
+                  element={<Navigate to={`/${defaultLang}`} replace />}
+                />
+                <Route
+                  path="/:lang/*"
+                  element={
+                    <>
+                      <Header />
+                      <Routes>
+                        <Route index element={<Home />} />
+                        <Route path="tag/:slug" element={<Tag />} />
+                        <Route path="cart" element={<Cart />} />
+                        <Route path="thanh-toan" element={<Checkout />} />
+                        <Route path="search" element={<Search />} />
+                        <Route path="wishlist" element={<Wishlist />} />
+                        <Route path=":slug.html" element={<HtmlRouter />} />
+                        <Route path=":slug" element={<Resolver />} />
+                      </Routes>
+                      <Footer />
+                    </>
+                  }
+                />
+              </>
+            )}
           </Routes>
 
           <CartToast />
         </CartProvider>
       </WishlistProvider>
-    </>
+    </LanguageProvider>
   );
 }
 

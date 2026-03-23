@@ -6,16 +6,20 @@ import Breadcrumb from "@/router/Breadcrumb";
 import { getPages } from "@/utils/pagination";
 import { useSearchParams } from "react-router-dom";
 import useLangPath from "@/utils/useLangPath";
+import { useLanguage } from "@/context/useLanguage";
 import "./News.scss";
 function Cate({ data }) {
   const getLangPath = useLangPath(); // gọi hook
+  const { lang: urlLang } = useParams(); // lang từ URL
+  const { defaultLang } = useLanguage();
   const [news, setNews] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
   const [categoryPath, setCategoryPath] = useState([]);
   const [category, setCategory] = useState(null);
-  const { lang } = useParams(); // đọc lang từ path
+  // fallback lang nếu URL không có
+  const lang = urlLang || defaultLang;
   useEffect(() => {
     if (!data?.id) return;
     fetch(

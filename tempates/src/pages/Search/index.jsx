@@ -1,35 +1,48 @@
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
-import { Link } from "react-router-dom";
 import Seo from "@/components/Seo";
+import { useLanguage } from "@/context/useLanguage";
+import useLangPath from "@/utils/useLangPath";
+import useLang from "@/context/useLang";
 function Search() {
+  const { lang: urlLang } = useParams(); // lang từ URL
+  const { defaultLang } = useLanguage();
+  const lang = urlLang || defaultLang;
+  const getLangPath = useLangPath();
   const [searchParams] = useSearchParams();
   const keyword = searchParams.get("q");
-
+  //console.log(lang);
   const [items, setItems] = useState([]);
-
+  const { t } = useLang();
   useEffect(() => {
     if (!keyword) return;
 
-    fetch(`${API_URL}/api/search.php?q=${encodeURIComponent(keyword)}`)
+    fetch(
+      `${API_URL}/api/search.php?q=${encodeURIComponent(keyword)}&lang=${lang}`
+    )
       .then((res) => res.json())
       .then((data) => setItems(data.items || []));
-  }, [keyword]);
+  }, [keyword, lang]);
 
   return (
     <>
       <Seo title="Tìm kiếm" />
       <main>
         <div className="container">
-          <h1 className="ttl01">Kết quả tìm kiếm: {keyword}</h1>
+          <h1 className="ttl01">
+            {t.search_kq}: {keyword}
+          </h1>
 
           {items.length === 0 && <p>Không tìm thấy sản phẩm</p>}
 
           <div className="p-products">
             {items.map((item) => (
               <div key={item.id} className="product-item">
-                <Link className="product-item__img" to={`/${item.slug}.html`}>
+                <Link
+                  className="product-item__img"
+                  to={getLangPath(item.slug, ".html")}
+                >
                   <img
                     src={`${API_URL}/${item.img_thumb_vn}`}
                     alt={item.name}
@@ -41,7 +54,7 @@ function Search() {
                   <h3>
                     <Link
                       className="product-item__ttl"
-                      to={`/${item.slug}.html`}
+                      to={getLangPath(item.slug, ".html")}
                     >
                       {item.name}
                     </Link>

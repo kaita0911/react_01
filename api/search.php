@@ -11,7 +11,16 @@ include_once(__DIR__ . "/../functions/function-api.php");
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
-$langid = 1;
+$langCode     = isset($_GET['lang']) ? $_GET['lang'] : '';
+// Lấy từ DB → map code -> id
+$langMap = [];
+$languages = $GLOBALS['sp']->getAll("SELECT id, code FROM language");
+foreach($languages as $row) {
+    $langMap[$row['code']] = $row['id'];
+}
+
+// Nếu code không hợp lệ, default = 1 (vi)
+$langid = isset($langMap[$langCode]) ? $langMap[$langCode] : 1;
 
 $q = isset($_GET['q']) ? trim($_GET['q']) : '';
 $page = max(1, (int)(isset($_GET['page']) ? $_GET['page'] : 1));

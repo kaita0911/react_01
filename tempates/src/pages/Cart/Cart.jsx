@@ -1,22 +1,32 @@
 import { useCart } from "@/context/CartContext";
+import { Link } from "react-router-dom";
 import { useState } from "react";
+import { useParams } from "react-router-dom";
 import Seo from "@/components/Seo";
 import { API_URL } from "@/config";
-import { Link } from "react-router-dom";
 
+import useLangPath from "@/utils/useLangPath";
+import useLang from "@/context/useLang";
+import { useLanguage } from "@/context/useLanguage";
 import "./Cart.scss";
 function Cart() {
-  const { cart, updateQty, removeItem, clearCart, totalPrice, totalQty } =
-    useCart();
-
-  if (cart.length === 0) return <h2>Giỏ hàng trống</h2>;
   const [confirmId, setConfirmId] = useState(null);
+  const getLangPath = useLangPath(); // gọi hook
+  const { lang: urlLang } = useParams(); // lang từ URL
+  const { defaultLang } = useLanguage();
+  const lang = urlLang || defaultLang;
+
+  const { singleLang } = useLanguage();
+  const { cart, updateQty, removeItem, totalPrice, totalQty } = useCart();
+  const { t } = useLang();
+  if (cart.length === 0) return <h2>Giỏ hàng trống</h2>;
+
   return (
     <>
       <Seo title="Giỏ hàng" />
       <main>
         <div className="container">
-          <h1 className="ttl-cart">Giỏ hàng</h1>
+          <h1 className="ttl-cart">{t.cart}</h1>
           <div className="cart-box">
             <div className="cart-box-left cart-bd">
               {cart.map((item) => (
@@ -34,7 +44,7 @@ function Cart() {
                       <h3>
                         <Link
                           className="product-item__ttl"
-                          to={`/${item.slug}.html`}
+                          to={getLangPath(item.slug, ".html")}
                           alt={item.title}
                         >
                           {item.title}
@@ -76,10 +86,10 @@ function Cart() {
               ))}
             </div>
             <div className="cart-box-right cart-bd">
-              <div className="cart-box__ttl">Chi tiết đơn hàng</div>
+              <div className="cart-box__ttl">{t.cart_detail}</div>
               <div className="cart-summary">
                 <div className="cart-summary__row">
-                  <label>Tổng tiền</label>
+                  <label>{t.mount}</label>
                   <span className="cart-summary-total">
                     {totalPrice.toLocaleString("vi-VN")} đ
                   </span>
@@ -89,18 +99,21 @@ function Cart() {
                   <span className="cart-summary-sale"> 0₫</span>
                 </div> */}
                 <div className="cart-summary__row">
-                  <label>Số lượng</label>
+                  <label>{t.quality}</label>
                   <span className="cart-summary-quality">{totalQty}</span>
                 </div>
               </div>
               <div className="cart-pay">
-                <label>Thành tiền</label>
+                <label>{t.total}</label>
                 <strong className="cart-pay-total">
                   {totalPrice.toLocaleString("vi-VN")} đ
                 </strong>
               </div>
-              <Link to="/thanh-toan/" className="cart-btn">
-                Thanh toán <i className="fa-solid fa-arrow-right"></i>
+              <Link
+                to={singleLang ? "/thanh-toan/" : `/${lang}/thanh-toan/`}
+                className="cart-btn"
+              >
+                {t.pay} <i className="fa-solid fa-arrow-right"></i>
               </Link>
             </div>
           </div>

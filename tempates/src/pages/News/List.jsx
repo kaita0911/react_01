@@ -6,15 +6,19 @@ import Breadcrumb from "@/router/Breadcrumb";
 import { getPages } from "@/utils/pagination";
 import { useSearchParams } from "react-router-dom";
 import useLangPath from "@/utils/useLangPath";
+import { useLanguage } from "@/context/useLanguage";
 import "./News.scss";
 function List() {
   const getLangPath = useLangPath(); // gọi hook
+  const { lang: urlLang } = useParams(); // lang từ URL
+  const { defaultLang } = useLanguage();
+  const lang = urlLang || defaultLang;
   const [news, setNews] = useState([]);
   const [title, setTitle] = useState("");
   const [pagination, setPagination] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const page = Number(searchParams.get("page")) || 1;
-  const { lang } = useParams(); // đọc lang từ path
+  // const { lang } = useParams(); // đọc lang từ path
   useEffect(() => {
     fetch(`${API_URL}/api/news.php?act=list&page=${page}&lang=${lang}`)
       .then((res) => res.json())
@@ -30,7 +34,7 @@ function List() {
       .then((res) => res.json())
       .then((menu) => {
         const item = menu.find((m) => String(m.comp) === "1");
-        if (item) setTitle(item.name_detail);
+        if (item) setTitle(item.name);
       });
   }, [lang]);
   // ⭐ Lấy thông tin công ty

@@ -1,16 +1,23 @@
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { API_URL } from "@/config";
-import { Link } from "react-router-dom";
+import { useLanguage } from "@/context/useLanguage";
+import useLangPath from "@/utils/useLangPath";
+import useLang from "@/context/useLang";
 function Tag() {
+  const { lang: urlLang } = useParams(); // lang từ URL
+  const { defaultLang } = useLanguage();
+  const lang = urlLang || defaultLang;
+  const getLangPath = useLangPath();
+  const { t } = useLang();
   const { slug } = useParams();
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    fetch(`${API_URL}/api/tag.php?slug=${slug}`)
+    fetch(`${API_URL}/api/tag.php?slug=${slug}&lang=${lang}`)
       .then((res) => res.json())
       .then((data) => setItems(data.articles || []));
-  }, [slug]);
+  }, [slug, lang]);
 
   return (
     <>
@@ -19,11 +26,14 @@ function Tag() {
           <div className="p-tags">
             <h1 className="ttl01">Tag: {slug}</h1>
 
-            {items.length === 0 && <p>Không có bài viết</p>}
+            {items.length === 0 && <p>{t.no_post}</p>}
             <div className="p-products --mrg-top">
               {items.map((item) => (
                 <div className="product-item">
-                  <Link className="product-item__img" to={`/${item.slug}.html`}>
+                  <Link
+                    className="product-item__img"
+                    to={getLangPath(item.slug, ".html")}
+                  >
                     <img
                       src={`${API_URL}/${item.img_thumb_vn}`}
                       alt={item.name}
@@ -35,7 +45,7 @@ function Tag() {
                     <h3>
                       <Link
                         className="product-item__ttl"
-                        to={`/${item.slug}.html`}
+                        to={getLangPath(item.slug, ".html")}
                       >
                         {item.name}
                       </Link>

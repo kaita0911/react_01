@@ -9,9 +9,14 @@ import ProductGallery from "./ProductGallery";
 import { useCart } from "@/context/CartContext";
 import useLang from "@/context/useLang";
 import useScrollToTop from "@/utils/useScrollToTop";
+import { useLanguage } from "@/context/useLanguage";
+import useLangPath from "@/utils/useLangPath";
 function Detail() {
-  const { slug, lang } = useParams();
+  const { slug, lang: urlLang } = useParams(); // lang từ URL
+  const { defaultLang } = useLanguage();
+  const lang = urlLang || defaultLang;
   const [news, setNews] = useState(null);
+  const getLangPath = useLangPath(); // gọi hook
   const { t } = useLang();
   const { addToCart, buyNow } = useCart();
   const [qty, setQuantity] = useState(1);
@@ -31,7 +36,7 @@ function Detail() {
       <div className="container">
         <Breadcrumb comp="2" article={news} />
         <Seo
-          title={news.title}
+          title={news.name}
           description={news?.des}
           keywords={news?.keyword}
           image={news?.thumb && `${API_URL}/${news.thumb}`}
@@ -47,14 +52,14 @@ function Detail() {
                 <div className="main-img">
                   <img
                     src={`${API_URL}/${news.thumb}`}
-                    alt={news.title}
+                    alt={news.name}
                     className="img-scale"
                   />
                 </div>
               )}
             </div>
             <div className="product-detail__right">
-              <h1 className="ttl01">{news.title}</h1>
+              <h1 className="ttl01">{news.name}</h1>
               <div className="product-price --detail">
                 <span className="price-current">
                   {Number(news.price) > 0
@@ -101,15 +106,16 @@ function Detail() {
                   onClick={() =>
                     addToCart({
                       id: news.id,
-                      title: news.title,
+                      title: news.name,
                       slug: news.slug,
                       price: Number(news.price),
                       image: news.thumb,
                       qty: qty,
+                      lang: lang, // ✅ thêm dòng này
                     })
                   }
                 >
-                  🛒 Thêm vào giỏ hàng
+                  🛒 {t.addtocart}
                 </button>
 
                 <button
@@ -117,7 +123,7 @@ function Detail() {
                   onClick={() =>
                     buyNow({
                       id: news.id,
-                      title: news.title,
+                      title: news.name,
                       slug: news.slug,
                       price: Number(news.price),
                       image: news.thumb,
@@ -125,7 +131,7 @@ function Detail() {
                     })
                   }
                 >
-                  ⚡ Mua ngay
+                  ⚡ {t.buynow}
                 </button>
               </div>
               <div
@@ -136,7 +142,7 @@ function Detail() {
                 {news.tags?.map((tag) => (
                   <Link
                     key={tag.slug}
-                    to={`/tag/${tag.slug}`}
+                    to={getLangPath(`tag/${tag.slug}`)}
                     className="tag-link"
                   >
                     {tag.name}

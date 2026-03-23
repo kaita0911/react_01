@@ -7,7 +7,16 @@ header("Access-Control-Allow-Headers: Content-Type");
 
 include_once(__DIR__ . "/../includes/config.php");
 
-$langid = 1;
+$langCode     = isset($_GET['lang']) ? $_GET['lang'] : '';
+// Lấy từ DB → map code -> id
+$langMap = [];
+$languages = $GLOBALS['sp']->getAll("SELECT id, code FROM language");
+foreach($languages as $row) {
+    $langMap[$row['code']] = $row['id'];
+}
+
+// Nếu code không hợp lệ, default = 1 (vi)
+$langid = isset($langMap[$langCode]) ? $langMap[$langCode] : 1;
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     echo json_encode([

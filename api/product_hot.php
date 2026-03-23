@@ -9,10 +9,17 @@ header("Access-Control-Allow-Methods: GET, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
 include_once(__DIR__ . "/../includes/config.php");
-include_once(__DIR__ . "/../includes/get_languages.php");
 
+$langCode     = isset($_GET['lang']) ? $_GET['lang'] : '';
+// Lấy từ DB → map code -> id
+$langMap = [];
+$languages = $GLOBALS['sp']->getAll("SELECT id, code FROM language");
+foreach($languages as $row) {
+    $langMap[$row['code']] = $row['id'];
+}
 
-$langid     = 1; // tùy hệ thống bạn
+// Nếu code không hợp lệ, default = 1 (vi)
+$langid = isset($langMap[$langCode]) ? $langMap[$langCode] : 1;
 // ===== Preflight =====
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
